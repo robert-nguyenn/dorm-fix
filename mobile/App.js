@@ -1,44 +1,136 @@
-import { StatusBar } from 'expo-status-bar';
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import HomeScreen from './src/screens/HomeScreen';
-import CreateTicketScreen from './src/screens/CreateTicketScreen';
-import TicketDetailScreen from './src/screens/TicketDetailScreen';
+import React from "react";
+import { Platform, View, Text, StyleSheet } from "react-native";
+import { StatusBar } from "expo-status-bar";
+import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { LinearGradient } from "expo-linear-gradient";
+
+import HomeScreen from "./src/screens/HomeScreen";
+import CreateTicketScreen from "./src/screens/CreateTicketScreen";
+import TicketDetailScreen from "./src/screens/TicketDetailScreen";
 
 const Stack = createNativeStackNavigator();
 
+function HeaderBackground() {
+  return (
+    <View style={StyleSheet.absoluteFill}>
+      {/* Clean white to light blue gradient */}
+      <LinearGradient
+        colors={["#FFFFFF", "#F8FAFC", "#EFF6FF"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
+      
+      {/* Subtle bottom border */}
+      <View style={styles.bottomBorder} />
+    </View>
+  );
+}
+
+function BrandTitle({ title }) {
+  return (
+    <View style={styles.titleWrap}>
+      <Text style={styles.subtitle} numberOfLines={1}>
+        {title}
+      </Text>
+    </View>
+  );
+}
+
+const navTheme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    background: "#F8FAFC",
+  },
+};
+
 export default function App() {
   return (
-    <NavigationContainer>
-      <StatusBar style="auto" />
+    <NavigationContainer theme={navTheme}>
+      <StatusBar style="dark" />
       <Stack.Navigator
         initialRouteName="Home"
         screenOptions={{
+          headerTintColor: "#0F172A",
+          headerTitleAlign: "left",
+          headerShadowVisible: false,
+          headerTransparent: true,
+          headerBackground: () => <HeaderBackground />,
+          headerTitle: ({ children }) => <BrandTitle title={children} />,
+          headerBackTitleVisible: false,
+          
           headerStyle: {
-            backgroundColor: '#2563eb',
+            backgroundColor: "transparent",
+            height: Platform.OS === "ios" ? 120 : 100,
           },
-          headerTintColor: '#fff',
-          headerTitleStyle: {
-            fontWeight: 'bold',
+          
+          headerTitleContainerStyle: {
+            paddingTop: Platform.OS === "ios" ? 22 : 12,
+            paddingBottom: 12,
+            paddingLeft: 4,
           },
+          
+          contentStyle: {
+            backgroundColor: "#F8FAFC",
+          },
+          
+          animation: "slide_from_right",
         }}
       >
-        <Stack.Screen 
-          name="Home" 
+        <Stack.Screen
+          name="Home"
           component={HomeScreen}
-          options={{ title: 'DormFix - My Tickets' }}
+          options={{
+            title: "Active Requests",
+            headerLargeTitle: false,
+          }}
         />
-        <Stack.Screen 
-          name="CreateTicket" 
+
+        <Stack.Screen
+          name="CreateTicket"
           component={CreateTicketScreen}
-          options={{ title: 'Submit Maintenance Ticket' }}
+          options={{
+            title: "New Request",
+            presentation: "modal",
+            animation: "slide_from_bottom",
+            headerLargeTitle: false,
+          }}
         />
-        <Stack.Screen 
-          name="TicketDetail" 
+
+        <Stack.Screen
+          name="TicketDetail"
           component={TicketDetailScreen}
-          options={{ title: 'Ticket Details' }}
+          options={{
+            title: "Request Details",
+            headerLargeTitle: false,
+          }}
         />
       </Stack.Navigator>
     </NavigationContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  bottomBorder: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 1,
+    backgroundColor: "rgba(15, 23, 42, 0.06)",
+  },
+  
+  titleWrap: {
+    flexDirection: "column",
+  },
+  
+  subtitle: {
+    color: "#0F172A",
+    fontSize: 17,
+    fontWeight: "600",
+    maxWidth: 260,
+    letterSpacing: -0.3,
+  },
+});

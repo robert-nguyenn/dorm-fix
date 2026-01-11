@@ -1,306 +1,512 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from "react";
 import {
   View,
   Text,
-  TextInput,
-  TouchableOpacity,
-  Image,
-  ScrollView,
   StyleSheet,
+  TextInput,
+  Pressable,
+  ScrollView,
+  SafeAreaView,
+  Image,
   Alert,
-  ActivityIndicator,
-} from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
-import { ticketAPI } from '../services/api';
+  Platform,
+} from "react-native";
+import * as ImagePicker from "expo-image-picker";
+
+const USE_MOCK = true;
+
+const BUILDINGS = ["Pearsons Hall", "Caws Hall", "Yates Hall", "Miller Hall"];
+const CATEGORIES = ["Plumbing", "Electrical", "HVAC", "Furniture", "Other"];
+const SEVERITIES = ["Low", "Medium", "High"];
+
+const severityMeta = {
+  Low: { dot: "#22C55E", bg: "#F0FDF4", border: "#86EFAC", text: "#16A34A" },
+  Medium: { dot: "#F59E0B", bg: "#FFFBEB", border: "#FCD34D", text: "#D97706" },
+  High: { dot: "#EF4444", bg: "#FEF2F2", border: "#FCA5A5", text: "#DC2626" },
+};
 
 export default function CreateTicketScreen({ navigation }) {
-  const [image, setImage] = useState(null);
-  const [building, setBuilding] = useState('');
-  const [room, setRoom] = useState('');
-  const [locationNotes, setLocationNotes] = useState('');
-  const [userNote, setUserNote] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [building, setBuilding] = useState("");
+  const [room, setRoom] = useState("");
+  const [category, setCategory] = useState("");
+  const [severity, setSeverity] = useState("Medium");
+  const [description, setDescription] = useState("");
+  const [images, setImages] = useState([]); // array of local URIs
+  const [submitting, setSubmitting] = useState(false);
+
+  const canSubmit = useMemo(() => {
+    return Boolean(building && room && category && !submitting);
+  }, [building, room, category, submitting]);
 
   const pickImage = async () => {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    
-    if (status !== 'granted') {
-      Alert.alert('Permission needed', 'Camera permission is required to take photos');
+    if (images.length >= 3) {
+      Alert.alert("Limit reached", "You can add up to 3 photos.");
       return;
     }
 
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 0.8,
-    });
-
-    if (!result.canceled) {
-      setImage(result.assets[0]);
-    }
-  };
-
-  const pickFromGallery = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    
-    if (status !== 'granted') {
-      Alert.alert('Permission needed', 'Photo library permission is required');
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert("Permission needed", "Please allow photo access to attach images.");
       return;
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 0.8,
+      allowsMultipleSelection: true,
+      quality: 0.85,
+      selectionLimit: 3 - images.length,
     });
 
     if (!result.canceled) {
-      setImage(result.assets[0]);
+      const pickedUris = result.assets.map((a) => a.uri);
+      setImages((prev) => [...prev, ...pickedUris].slice(0, 3));
     }
+  };
+
+  const removeImage = (idx) => {
+    setImages((prev) => prev.filter((_, i) => i !== idx));
   };
 
   const handleSubmit = async () => {
-    if (!image) {
-      Alert.alert('Photo required', 'Please take a photo of the maintenance issue');
+    if (!building || !room || !category) {
+      Alert.alert("Missing fields", "Building, room, and category are required.");
       return;
     }
 
-    if (!building.trim() || !room.trim()) {
-      Alert.alert('Location required', 'Please enter your building and room number');
-      return;
-    }
+    setSubmitting(true);
 
     try {
-      setLoading(true);
-
-      // Create FormData
-      const formData = new FormData();
-      formData.append('images', {
-        uri: image.uri,
-        type: 'image/jpeg',
-        name: 'issue.jpg',
-      });
-      formData.append('building', building.trim());
-      formData.append('room', room.trim());
-      if (locationNotes.trim()) {
-        formData.append('locationNotes', locationNotes.trim());
+      if (!USE_MOCK) {
+        /**
+         * 🔌 BACKEND CONNECTION POINT (matches your mobile conventions)
+         *
+         * 1) Import:
+         *    import { ticketAPI } from "../services/api";
+         *
+         * 2) Build FormData with key `images` (multipart/form-data):
+         *
+         *    const form = new FormData();
+         *    form.append("building", building);
+         *    form.append("room", room);
+         *    form.append("category", category);
+         *    form.append("severity", severity);
+         *    if (description) form.append("description", description);
+         *
+         *    images.forEach((uri, i) => {
+         *      form.append("images", {
+         *        uri,
+         *        type: "image/jpeg",
+         *        name: `issue-${Date.now()}-${i}.jpg`,
+         *      });
+         *    });
+         *
+         * 3) Call:
+         *    await ticketAPI.createTicket(form);
+         *
+         * NOTE: Keep `images` key (not `image`, not `files`) so it matches backend.
+         */
+      } else {
+        // Mock submit: log payload and simulate network latency
+        const payload = { building, room, category, severity, description, images };
+        console.log("MOCK SUBMIT:", payload);
+        await new Promise((r) => setTimeout(r, 550));
       }
-      if (userNote.trim()) {
-        formData.append('userNote', userNote.trim());
-      }
 
-      const response = await ticketAPI.createTicket(formData);
-
-      Alert.alert(
-        'Success!',
-        'Your maintenance ticket has been submitted. Facilities will be notified.',
-        [
-          {
-            text: 'OK',
-            onPress: () => navigation.navigate('Home'),
-          },
-        ]
-      );
-    } catch (error) {
-      console.error('Submit error:', error);
-      Alert.alert(
-        'Submission failed',
-        'Could not submit ticket. Please check your connection and try again.'
-      );
+      Alert.alert("Submitted", "Your request has been created.", [
+        { text: "OK", onPress: () => navigation.goBack() },
+      ]);
+    } catch (e) {
+      console.log("Submit error:", e);
+      Alert.alert("Error", "Could not submit your ticket. Please try again.");
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
+  const sevStyle = severityMeta[severity] || severityMeta.Medium;
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.sectionTitle}>1. Take a Photo</Text>
-      <Text style={styles.sectionSubtitle}>
-        Show the maintenance issue clearly
-      </Text>
+    <SafeAreaView style={styles.safe}>
+      <ScrollView contentContainerStyle={styles.scroll}>
+        {/* Top card */}
+        <View style={styles.heroCard}>
+          <View style={styles.heroTop}>
+            <View style={styles.heroIconWrap}>
+              <Text style={styles.heroIcon}>🛠️</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.heroTitle}>New request</Text>
+              <Text style={styles.heroSub}>Fast, clear, facilities-ready.</Text>
+            </View>
+          </View>
 
-      {image ? (
-        <View style={styles.imageContainer}>
-          <Image source={{ uri: image.uri }} style={styles.image} />
-          <TouchableOpacity
-            style={styles.changePhotoButton}
-            onPress={pickImage}
-          >
-            <Text style={styles.changePhotoText}>Retake Photo</Text>
-          </TouchableOpacity>
+          <View style={styles.heroHintRow}>
+            <View style={styles.hintPill}>
+              <Text style={styles.hintText}>Photo → Structured ticket</Text>
+            </View>
+            <View style={styles.hintPill}>
+              <Text style={styles.hintText}>Under 30 seconds</Text>
+            </View>
+          </View>
         </View>
-      ) : (
-        <View style={styles.photoButtons}>
-          <TouchableOpacity style={styles.photoButton} onPress={pickImage}>
-            <Text style={styles.photoButtonText}>📷 Take Photo</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.photoButton, styles.photoButtonSecondary]}
-            onPress={pickFromGallery}
-          >
-            <Text style={styles.photoButtonTextSecondary}>🖼️ Choose from Gallery</Text>
-          </TouchableOpacity>
+
+        {/* Location */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Location</Text>
+          <Text style={styles.cardCaption}>Choose building + room (required)</Text>
+
+          <Text style={styles.label}>Building</Text>
+          <View style={styles.chipGrid}>
+            {BUILDINGS.map((b) => (
+              <Pressable
+                key={b}
+                onPress={() => setBuilding(b)}
+                style={({ pressed }) => [
+                  styles.chip,
+                  building === b && styles.chipActive,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <Text style={[styles.chipText, building === b && styles.chipTextActive]}>
+                  {b}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          <Text style={styles.label}>Room</Text>
+          <TextInput
+            value={room}
+            onChangeText={setRoom}
+            placeholder="e.g., 214"
+            placeholderTextColor="#94A3B8"
+            style={styles.input}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
         </View>
-      )}
 
-      <Text style={styles.sectionTitle}>2. Location Details</Text>
+        {/* Issue */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Issue</Text>
+          <Text style={styles.cardCaption}>Category + priority (required)</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Building Name (e.g., Smith Hall)"
-        value={building}
-        onChangeText={setBuilding}
-        autoCapitalize="words"
-      />
+          <Text style={styles.label}>Category</Text>
+          <View style={styles.chipGrid}>
+            {CATEGORIES.map((c) => (
+              <Pressable
+                key={c}
+                onPress={() => setCategory(c)}
+                style={({ pressed }) => [
+                  styles.chip,
+                  category === c && styles.chipActive,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <Text style={[styles.chipText, category === c && styles.chipTextActive]}>
+                  {c}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Room Number (e.g., 204)"
-        value={room}
-        onChangeText={setRoom}
-        autoCapitalize="characters"
-      />
+          <Text style={styles.label}>Priority</Text>
+          <View style={styles.priorityRow}>
+            {SEVERITIES.map((s) => {
+              const sMeta = severityMeta[s];
+              const active = severity === s;
+              return (
+                <Pressable
+                  key={s}
+                  onPress={() => setSeverity(s)}
+                  style={({ pressed }) => [
+                    styles.priorityChip,
+                    active && { backgroundColor: sMeta.bg, borderColor: sMeta.border },
+                    pressed && styles.pressed,
+                  ]}
+                >
+                  <View style={[styles.dot, { backgroundColor: sMeta.dot }]} />
+                  <Text style={[styles.priorityText, active && { color: sMeta.text }]}>
+                    {s}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Location notes (optional, e.g., 'Bathroom sink')"
-        value={locationNotes}
-        onChangeText={setLocationNotes}
-        autoCapitalize="sentences"
-      />
+          <Text style={styles.label}>Notes (optional)</Text>
+          <TextInput
+            value={description}
+            onChangeText={setDescription}
+            placeholder="Anything helpful for facilities…"
+            placeholderTextColor="#94A3B8"
+            style={[styles.input, styles.textArea]}
+            multiline
+          />
+        </View>
 
-      <Text style={styles.sectionTitle}>3. Additional Details (Optional)</Text>
+        {/* Photos */}
+        <View style={styles.card}>
+          <View style={styles.photoHeader}>
+            <View>
+              <Text style={styles.cardTitle}>Photos</Text>
+              <Text style={styles.cardCaption}>Up to 3 images. More clarity = faster fix.</Text>
+            </View>
 
-      <TextInput
-        style={[styles.input, styles.textArea]}
-        placeholder="Describe the issue in your own words..."
-        value={userNote}
-        onChangeText={setUserNote}
-        multiline
-        numberOfLines={4}
-        autoCapitalize="sentences"
-      />
+            <Pressable onPress={pickImage} style={({ pressed }) => [styles.addBtn, pressed && styles.pressed]}>
+              <Text style={styles.addBtnText}>Add</Text>
+            </Pressable>
+          </View>
 
-      <TouchableOpacity
-        style={[styles.submitButton, loading && styles.submitButtonDisabled]}
-        onPress={handleSubmit}
-        disabled={loading}
-      >
-        {loading ? (
-          <ActivityIndicator color="white" />
-        ) : (
-          <Text style={styles.submitButtonText}>Submit Ticket</Text>
-        )}
-      </TouchableOpacity>
+          <View style={styles.imageGrid}>
+            {images.map((uri, idx) => (
+              <View key={uri + idx} style={styles.imageItem}>
+                <Image source={{ uri }} style={styles.image} />
+                <Pressable onPress={() => removeImage(idx)} style={styles.removeBtn}>
+                  <Text style={styles.removeText}>×</Text>
+                </Pressable>
+              </View>
+            ))}
 
-      <Text style={styles.disclaimer}>
-        ⚠️ Not for emergencies. For immediate danger, contact campus security or call 911.
-      </Text>
-    </ScrollView>
+            {images.length === 0 && (
+              <View style={styles.photoEmpty}>
+                <Text style={styles.photoEmptyIcon}>📷</Text>
+                <Text style={styles.photoEmptyText}>Add a photo to auto-fill the ticket.</Text>
+              </View>
+            )}
+          </View>
+
+          {/* Little “preview” pill */}
+          <View style={[styles.previewPill, { backgroundColor: sevStyle.bg, borderColor: sevStyle.border }]}>
+            <View style={[styles.dot, { backgroundColor: sevStyle.dot }]} />
+            <Text style={[styles.previewText, { color: sevStyle.text }]}>
+              Priority: {severity}
+            </Text>
+          </View>
+        </View>
+
+        {/* Submit */}
+        <Pressable
+          onPress={handleSubmit}
+          disabled={!canSubmit}
+          style={({ pressed }) => [
+            styles.submit,
+            !canSubmit && styles.submitDisabled,
+            pressed && canSubmit && styles.submitPressed,
+          ]}
+        >
+          <Text style={styles.submitText}>{submitting ? "Submitting…" : "Submit request"}</Text>
+          <Text style={styles.submitArrow}>→</Text>
+        </Pressable>
+
+        <Text style={styles.footerNote}>
+          Not an emergency service. For immediate danger, call campus security / 911.
+        </Text>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f3f4f6',
+  safe: { flex: 1, backgroundColor: "#F8FAFC" },
+  scroll: {
+    paddingTop: Platform.OS === "ios" ? 110 : 90,
+    paddingHorizontal: 16,
+    paddingBottom: 28,
+    gap: 14,
   },
-  content: {
+
+  heroCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
     padding: 16,
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 2,
   },
-  sectionTitle: {
+  heroTop: { flexDirection: "row", gap: 12, alignItems: "center" },
+  heroIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: "#EFF6FF",
+    borderWidth: 1,
+    borderColor: "#BFDBFE",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  heroIcon: { fontSize: 20 },
+  heroTitle: {
+    color: "#0F172A",
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#111827',
-    marginTop: 16,
+    fontWeight: "700",
+    letterSpacing: -0.3,
+  },
+  heroSub: { color: "#64748B", marginTop: 2, fontSize: 13 },
+
+  heroHintRow: { flexDirection: "row", gap: 10, marginTop: 12, flexWrap: "wrap" },
+  hintPill: {
+    backgroundColor: "#F1F5F9",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  hintText: { color: "#334155", fontSize: 12, fontWeight: "600" },
+
+  card: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 1,
+  },
+  cardTitle: { color: "#0F172A", fontSize: 16, fontWeight: "700", letterSpacing: -0.2 },
+  cardCaption: { color: "#64748B", fontSize: 13, marginTop: 4, marginBottom: 14 },
+
+  label: {
+    color: "#64748B",
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 1.4,
+    textTransform: "uppercase",
+    marginBottom: 10,
+  },
+
+  chipGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 16 },
+  chip: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: "#F8FAFC",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
+  chipActive: {
+    backgroundColor: "#EFF6FF",
+    borderColor: "#93C5FD",
+  },
+  chipText: { color: "#334155", fontSize: 13, fontWeight: "600" },
+  chipTextActive: { color: "#1D4ED8" },
+
+  input: {
+    backgroundColor: "#F8FAFC",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    color: "#0F172A",
+    fontSize: 15,
     marginBottom: 4,
   },
-  sectionSubtitle: {
-    fontSize: 14,
-    color: '#6b7280',
-    marginBottom: 12,
-  },
-  photoButtons: {
-    gap: 12,
-  },
-  photoButton: {
-    backgroundColor: '#2563eb',
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  photoButtonSecondary: {
-    backgroundColor: 'white',
-    borderWidth: 2,
-    borderColor: '#2563eb',
-  },
-  photoButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  photoButtonTextSecondary: {
-    color: '#2563eb',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  imageContainer: {
-    marginBottom: 16,
-  },
-  image: {
-    width: '100%',
-    height: 250,
-    borderRadius: 12,
-    backgroundColor: '#e5e7eb',
-  },
-  changePhotoButton: {
-    marginTop: 8,
-    padding: 12,
-    backgroundColor: '#6b7280',
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  changePhotoText: {
-    color: 'white',
-    fontWeight: '600',
-  },
-  input: {
-    backgroundColor: 'white',
-    padding: 14,
-    borderRadius: 8,
-    fontSize: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-  },
   textArea: {
-    height: 100,
-    textAlignVertical: 'top',
+    minHeight: 110,
+    textAlignVertical: "top",
+    paddingTop: 12,
   },
-  submitButton: {
-    backgroundColor: '#10b981',
-    padding: 16,
+
+  priorityRow: { flexDirection: "row", gap: 10, marginBottom: 10 },
+  priorityChip: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 12,
     borderRadius: 12,
-    alignItems: 'center',
-    marginTop: 8,
+    backgroundColor: "#F8FAFC",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
   },
-  submitButtonDisabled: {
-    backgroundColor: '#9ca3af',
+  priorityText: { color: "#334155", fontWeight: "700" },
+  dot: { width: 8, height: 8, borderRadius: 4 },
+
+  photoHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  addBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    backgroundColor: "#0F172A",
   },
-  submitButtonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
+  addBtnText: { color: "#FFFFFF", fontWeight: "700" },
+
+  imageGrid: { gap: 10 },
+  imageItem: {
+    width: "100%",
+    height: 190,
+    borderRadius: 14,
+    overflow: "hidden",
+    backgroundColor: "#F1F5F9",
   },
-  disclaimer: {
-    marginTop: 16,
+  image: { width: "100%", height: "100%" },
+  removeBtn: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: "rgba(15, 23, 42, 0.85)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  removeText: { color: "#fff", fontSize: 20, lineHeight: 20 },
+
+  photoEmpty: {
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    backgroundColor: "#F8FAFC",
+    padding: 14,
+    alignItems: "center",
+  },
+  photoEmptyIcon: { fontSize: 22 },
+  photoEmptyText: { marginTop: 6, color: "#475569", fontWeight: "600" },
+
+  previewPill: {
+    marginTop: 12,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  previewText: { fontWeight: "800" },
+
+  submit: {
+    marginTop: 6,
+    height: 54,
+    borderRadius: 16,
+    backgroundColor: "#2563EB",
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 10,
+    shadowColor: "#2563EB",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.22,
+    shadowRadius: 14,
+    elevation: 5,
+  },
+  submitDisabled: { opacity: 0.5 },
+  submitPressed: { transform: [{ scale: 0.99 }] },
+  submitText: { color: "#FFFFFF", fontSize: 16, fontWeight: "900" },
+  submitArrow: { color: "#FFFFFF", fontSize: 18, fontWeight: "300" },
+
+  footerNote: {
+    textAlign: "center",
+    color: "#94A3B8",
     fontSize: 12,
-    color: '#dc2626',
-    textAlign: 'center',
-    padding: 12,
-    backgroundColor: '#fef2f2',
-    borderRadius: 8,
+    marginTop: 6,
+    paddingHorizontal: 8,
   },
+
+  pressed: { opacity: 0.7 },
 });

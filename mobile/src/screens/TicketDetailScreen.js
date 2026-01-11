@@ -1,367 +1,367 @@
-import React, { useState, useEffect } from 'react';
+import React from "react";
 import {
   View,
   Text,
+  StyleSheet,
   ScrollView,
   Image,
-  StyleSheet,
-  ActivityIndicator,
-  TouchableOpacity,
-  Alert,
-} from 'react-native';
-import { ticketAPI } from '../services/api';
+  SafeAreaView,
+  Dimensions,
+  Platform,
+} from "react-native";
 
-export default function TicketDetailScreen({ route, navigation }) {
-  const { ticketId } = route.params;
-  const [ticket, setTicket] = useState(null);
-  const [loading, setLoading] = useState(true);
+const { width } = Dimensions.get("window");
 
-  useEffect(() => {
-    loadTicket();
-  }, []);
+const MOCK_DETAIL = {
+  _id: "1",
+  building: "Pearsons Hall",
+  room: "214",
+  category: "Plumbing",
+  severity: "High",
+  status: "IN_PROGRESS",
+  imageUrls: [
+    "https://images.unsplash.com/photo-1581579186983-3e0b8b3d8df0?auto=format&fit=crop&w=800&q=60",
+  ],
+  aiSummary: "Sink is leaking under the cabinet; water pooling near pipe connection.",
+  description: "There's a significant leak coming from under the bathroom sink. Water is pooling on the floor and the cabinet is getting damaged. This needs immediate attention.",
+  createdAt: new Date(Date.now() - 1000 * 60 * 22).toISOString(),
+  updatedAt: new Date(Date.now() - 1000 * 60 * 10).toISOString(),
+  assignedTo: "Maintenance Team A",
+};
 
-  const loadTicket = async () => {
-    try {
-      const response = await ticketAPI.getTicketById(ticketId);
-      setTicket(response.ticket);
-    } catch (error) {
-      console.error('Error loading ticket:', error);
-      Alert.alert('Error', 'Failed to load ticket details');
-    } finally {
-      setLoading(false);
-    }
-  };
+const SEVERITY_COLORS = {
+  High: { bg: "#FEF2F2", border: "#FCA5A5", text: "#DC2626" },
+  Medium: { bg: "#FFFBEB", border: "#FCD34D", text: "#D97706" },
+  Low: { bg: "#F0FDF4", border: "#86EFAC", text: "#16A34A" },
+};
 
-  const updateStatus = async (newStatus) => {
-    try {
-      const response = await ticketAPI.updateStatus(
-        ticketId,
-        newStatus,
-        `Status changed to ${newStatus}`
-      );
-      setTicket(response.ticket);
-      Alert.alert('Success', `Ticket status updated to ${newStatus}`);
-    } catch (error) {
-      console.error('Error updating status:', error);
-      Alert.alert('Error', 'Failed to update ticket status');
-    }
-  };
+const STATUS_INFO = {
+  NEW: { label: "New Request", color: "#2563EB", bg: "#EFF6FF" },
+  IN_PROGRESS: { label: "In Progress", color: "#D97706", bg: "#FEF3C7" },
+  RESOLVED: { label: "Completed", color: "#16A34A", bg: "#F0FDF4" },
+};
 
-  if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#2563eb" />
-      </View>
-    );
-  }
+function timeAgo(iso) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "Just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
 
-  if (!ticket) {
-    return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>Ticket not found</Text>
-      </View>
-    );
-  }
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'NEW': return '#3b82f6';
-      case 'IN_REVIEW': return '#f59e0b';
-      case 'IN_PROGRESS': return '#8b5cf6';
-      case 'RESOLVED': return '#10b981';
-      default: return '#6b7280';
-    }
-  };
-
-  const getSeverityColor = (severity) => {
-    switch (severity) {
-      case 'High': return '#dc2626';
-      case 'Medium': return '#f59e0b';
-      case 'Low': return '#10b981';
-      default: return '#6b7280';
-    }
-  };
+export default function TicketDetailScreen({ route }) {
+  const ticket = MOCK_DETAIL;
+  const severityStyle = SEVERITY_COLORS[ticket.severity] || SEVERITY_COLORS.Low;
+  const statusInfo = STATUS_INFO[ticket.status] || STATUS_INFO.NEW;
 
   return (
-    <ScrollView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.title}>
-          {ticket.building} - Room {ticket.room}
-        </Text>
-        <View style={styles.badges}>
-          <View style={[styles.badge, { backgroundColor: getStatusColor(ticket.status) }]}>
-            <Text style={styles.badgeText}>{ticket.status}</Text>
+    <SafeAreaView style={styles.safe}>
+      <ScrollView contentContainerStyle={styles.scroll}>
+        {ticket.imageUrls?.[0] && (
+          <View style={styles.heroContainer}>
+            <Image
+              source={{ uri: ticket.imageUrls[0] }}
+              style={styles.heroImage}
+            />
           </View>
-          <View style={[styles.badge, { backgroundColor: getSeverityColor(ticket.severity) }]}>
-            <Text style={styles.badgeText}>{ticket.severity}</Text>
-          </View>
-        </View>
-      </View>
+        )}
 
-      {/* Images */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Issue Photo</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {ticket.imageUrls.map((url, index) => (
-            <Image key={index} source={{ uri: url }} style={styles.image} />
-          ))}
-        </ScrollView>
-      </View>
-
-      {/* AI Analysis */}
-      {ticket.aiSummary && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>AI Analysis</Text>
-          <View style={styles.card}>
-            <Text style={styles.label}>Category</Text>
-            <Text style={styles.value}>{ticket.category}</Text>
-
-            <Text style={styles.label}>Summary</Text>
-            <Text style={styles.value}>{ticket.aiSummary}</Text>
-
-            {ticket.facilitiesDescription && (
-              <>
-                <Text style={styles.label}>Facilities Description</Text>
-                <Text style={styles.value}>{ticket.facilitiesDescription}</Text>
-              </>
-            )}
-          </View>
-        </View>
-      )}
-
-      {/* Follow-up Questions */}
-      {ticket.followUpQuestions && ticket.followUpQuestions.length > 0 && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Follow-up Questions</Text>
-          <View style={styles.card}>
-            {ticket.followUpQuestions.map((q, index) => (
-              <Text key={index} style={styles.listItem}>
-                • {q}
+        <View style={styles.content}>
+          <View style={styles.statusBar}>
+            <View style={[styles.statusPill, { backgroundColor: statusInfo.bg }]}>
+              <View style={[styles.statusDot, { backgroundColor: statusInfo.color }]} />
+              <Text style={[styles.statusText, { color: statusInfo.color }]}>
+                {statusInfo.label}
               </Text>
-            ))}
+            </View>
           </View>
-        </View>
-      )}
 
-      {/* Safety Notes */}
-      {ticket.safetyNotes && ticket.safetyNotes.length > 0 && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>⚠️ Safety Notes</Text>
-          <View style={[styles.card, styles.warningCard]}>
-            {ticket.safetyNotes.map((note, index) => (
-              <Text key={index} style={styles.warningText}>
-                • {note}
-              </Text>
-            ))}
-          </View>
-        </View>
-      )}
+          <View style={styles.section}>
+            <Text style={styles.location}>{ticket.building}</Text>
+            <Text style={styles.room}>Room {ticket.room}</Text>
 
-      {/* Status History */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Status Timeline</Text>
-        <View style={styles.card}>
-          {ticket.statusHistory.map((item, index) => (
-            <View key={index} style={styles.timelineItem}>
-              <View style={[styles.timelineDot, { backgroundColor: getStatusColor(item.status) }]} />
-              <View style={styles.timelineContent}>
-                <Text style={styles.timelineStatus}>{item.status}</Text>
-                <Text style={styles.timelineDate}>
-                  {new Date(item.timestamp).toLocaleString()}
+            <View style={styles.metaRow}>
+              <View style={[styles.badge, { backgroundColor: severityStyle.bg, borderColor: severityStyle.border }]}>
+                <Text style={[styles.badgeText, { color: severityStyle.text }]}>
+                  {ticket.severity} Priority
                 </Text>
-                {item.note && (
-                  <Text style={styles.timelineNote}>{item.note}</Text>
-                )}
+              </View>
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{ticket.category}</Text>
               </View>
             </View>
-          ))}
-        </View>
-      </View>
+          </View>
 
-      {/* Action Buttons (Demo Only) */}
-      {ticket.status !== 'RESOLVED' && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Update Status (Demo)</Text>
-          <View style={styles.actionButtons}>
-            {ticket.status === 'NEW' && (
-              <TouchableOpacity
-                style={[styles.actionButton, { backgroundColor: '#f59e0b' }]}
-                onPress={() => updateStatus('IN_REVIEW')}
-              >
-                <Text style={styles.actionButtonText}>Mark In Review</Text>
-              </TouchableOpacity>
-            )}
-            {ticket.status === 'IN_REVIEW' && (
-              <TouchableOpacity
-                style={[styles.actionButton, { backgroundColor: '#8b5cf6' }]}
-                onPress={() => updateStatus('IN_PROGRESS')}
-              >
-                <Text style={styles.actionButtonText}>Start Progress</Text>
-              </TouchableOpacity>
-            )}
-            {ticket.status === 'IN_PROGRESS' && (
-              <TouchableOpacity
-                style={[styles.actionButton, { backgroundColor: '#10b981' }]}
-                onPress={() => updateStatus('RESOLVED')}
-              >
-                <Text style={styles.actionButtonText}>Mark Resolved</Text>
-              </TouchableOpacity>
-            )}
+          <View style={styles.divider} />
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>AI Summary</Text>
+            <View style={styles.summaryCard}>
+              <Text style={styles.summaryText}>{ticket.aiSummary}</Text>
+            </View>
+          </View>
+
+          {ticket.description && (
+            <>
+              <View style={styles.divider} />
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Description</Text>
+                <Text style={styles.descriptionText}>{ticket.description}</Text>
+              </View>
+            </>
+          )}
+
+          <View style={styles.divider} />
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Assignment</Text>
+            <View style={styles.assignmentCard}>
+              <View style={styles.assignmentIcon}>
+                <Text style={styles.assignmentInitial}>
+                  {ticket.assignedTo?.[0] || "?"}
+                </Text>
+              </View>
+              <View>
+                <Text style={styles.assignmentName}>{ticket.assignedTo || "Unassigned"}</Text>
+                <Text style={styles.assignmentMeta}>
+                  Updated {timeAgo(ticket.updatedAt)}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.divider} />
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Activity</Text>
+            <View style={styles.timeline}>
+              <TimelineItem
+                label="Request Created"
+                time={timeAgo(ticket.createdAt)}
+                active
+              />
+              <TimelineItem
+                label="AI Analysis Complete"
+                time={timeAgo(ticket.createdAt)}
+                active
+              />
+              {ticket.status !== "NEW" && (
+                <TimelineItem
+                  label="Assigned to Team"
+                  time={timeAgo(ticket.updatedAt)}
+                  active
+                />
+              )}
+              {ticket.status === "RESOLVED" && (
+                <TimelineItem
+                  label="Issue Resolved"
+                  time={timeAgo(ticket.updatedAt)}
+                  active
+                />
+              )}
+            </View>
           </View>
         </View>
-      )}
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
 
-      {/* After Images */}
-      {ticket.afterImageUrls && ticket.afterImageUrls.length > 0 && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>✅ After Photos</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {ticket.afterImageUrls.map((url, index) => (
-              <Image key={index} source={{ uri: url }} style={styles.image} />
-            ))}
-          </ScrollView>
-        </View>
-      )}
-    </ScrollView>
+function TimelineItem({ label, time, active }) {
+  return (
+    <View style={styles.timelineItem}>
+      <View style={styles.timelineDot}>
+        <View style={[
+          styles.timelineDotInner,
+          active && styles.timelineDotActive
+        ]} />
+      </View>
+      <View style={styles.timelineContent}>
+        <Text style={styles.timelineLabel}>{label}</Text>
+        <Text style={styles.timelineTime}>{time}</Text>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f3f4f6',
+  safe: { flex: 1, backgroundColor: "#F8FAFC" },
+  scroll: { 
+    paddingTop: Platform.OS === "ios" ? 100 : 80,
+    paddingBottom: 40,
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+  
+  heroContainer: {
+    width: width,
+    height: 240,
+    backgroundColor: "#E2E8F0",
+    marginBottom: 20,
   },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+  heroImage: {
+    width: "100%",
+    height: "100%",
   },
-  errorText: {
-    fontSize: 18,
-    color: '#6b7280',
+  
+  content: { paddingHorizontal: 20 },
+  
+  statusBar: {
+    marginBottom: 20,
   },
-  header: {
-    backgroundColor: 'white',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
+  statusPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    alignSelf: "flex-start",
   },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#111827',
-    marginBottom: 8,
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
-  badges: {
-    flexDirection: 'row',
+  statusText: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  
+  section: { marginBottom: 24 },
+  
+  location: {
+    color: "#0F172A",
+    fontSize: 24,
+    fontWeight: "700",
+    letterSpacing: -0.5,
+  },
+  room: {
+    color: "#64748B",
+    fontSize: 16,
+    fontWeight: "500",
+    marginTop: 4,
+    marginBottom: 12,
+  },
+  metaRow: {
+    flexDirection: "row",
     gap: 8,
   },
   badge: {
-    paddingHorizontal: 12,
+    backgroundColor: "#F1F5F9",
+    paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 12,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
   },
   badgeText: {
-    color: 'white',
+    color: "#475569",
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: "600",
   },
-  section: {
-    padding: 16,
+  
+  divider: {
+    height: 1,
+    backgroundColor: "#E2E8F0",
+    marginVertical: 20,
   },
+  
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#111827',
+    color: "#0F172A",
+    fontSize: 15,
+    fontWeight: "600",
     marginBottom: 12,
   },
-  image: {
-    width: 300,
-    height: 200,
-    borderRadius: 12,
-    marginRight: 12,
-    backgroundColor: '#e5e7eb',
+  
+  summaryCard: {
+    backgroundColor: "#EFF6FF",
+    borderLeftWidth: 3,
+    borderLeftColor: "#3B82F6",
+    padding: 14,
+    borderRadius: 8,
   },
-  card: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 16,
+  summaryText: {
+    color: "#1E40AF",
+    fontSize: 14,
+    lineHeight: 20,
   },
-  warningCard: {
-    backgroundColor: '#fef2f2',
+  
+  descriptionText: {
+    color: "#475569",
+    fontSize: 14,
+    lineHeight: 22,
+  },
+  
+  assignmentCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    backgroundColor: "#FFFFFF",
+    padding: 14,
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#fecaca',
+    borderColor: "#E2E8F0",
   },
-  label: {
+  assignmentIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#EFF6FF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  assignmentInitial: {
+    color: "#3B82F6",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  assignmentName: {
+    color: "#0F172A",
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  assignmentMeta: {
+    color: "#64748B",
     fontSize: 12,
-    fontWeight: '600',
-    color: '#6b7280',
-    marginTop: 12,
-    marginBottom: 4,
+    marginTop: 2,
   },
-  value: {
-    fontSize: 14,
-    color: '#111827',
-    lineHeight: 20,
-  },
-  listItem: {
-    fontSize: 14,
-    color: '#374151',
-    marginBottom: 8,
-    lineHeight: 20,
-  },
-  warningText: {
-    fontSize: 14,
-    color: '#dc2626',
-    marginBottom: 8,
-    lineHeight: 20,
+  
+  timeline: {
+    gap: 16,
   },
   timelineItem: {
-    flexDirection: 'row',
-    marginBottom: 16,
+    flexDirection: "row",
+    gap: 12,
   },
   timelineDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginTop: 4,
-    marginRight: 12,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "#F1F5F9",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  timelineDotInner: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#CBD5E1",
+  },
+  timelineDotActive: {
+    backgroundColor: "#3B82F6",
   },
   timelineContent: {
     flex: 1,
   },
-  timelineStatus: {
+  timelineLabel: {
+    color: "#0F172A",
     fontSize: 14,
-    fontWeight: '600',
-    color: '#111827',
+    fontWeight: "600",
   },
-  timelineDate: {
+  timelineTime: {
+    color: "#64748B",
     fontSize: 12,
-    color: '#6b7280',
     marginTop: 2,
-  },
-  timelineNote: {
-    fontSize: 13,
-    color: '#374151',
-    marginTop: 4,
-  },
-  actionButtons: {
-    gap: 12,
-  },
-  actionButton: {
-    padding: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  actionButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
   },
 });

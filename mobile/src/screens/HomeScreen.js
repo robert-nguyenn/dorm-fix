@@ -1,239 +1,445 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState } from "react";
 import {
   View,
   Text,
-  FlatList,
-  TouchableOpacity,
-  RefreshControl,
   StyleSheet,
-  Alert,
-} from 'react-native';
-import { ticketAPI } from '../services/api';
+  FlatList,
+  Pressable,
+  Image,
+  RefreshControl,
+  SafeAreaView,
+  Platform,
+} from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+
+const USE_MOCK = true;
+
+const MOCK_TICKETS = [
+  {
+    _id: "1",
+    building: "Pearsons Hall",
+    room: "214",
+    category: "Plumbing",
+    severity: "High",
+    status: "IN_PROGRESS",
+    imageUrls: [
+      "https://images.unsplash.com/photo-1581579186983-3e0b8b3d8df0?auto=format&fit=crop&w=800&q=60",
+    ],
+    aiSummary:
+      "Sink is leaking under the cabinet; water pooling near pipe connection.",
+    createdAt: new Date(Date.now() - 1000 * 60 * 22).toISOString(),
+  },
+  {
+    _id: "2",
+    building: "Caws Hall",
+    room: "108",
+    category: "Electrical",
+    severity: "Medium",
+    status: "NEW",
+    imageUrls: [
+      "https://images.unsplash.com/photo-1523413651479-597eb2da0ad6?auto=format&fit=crop&w=800&q=60",
+    ],
+    aiSummary: "Outlet plate is cracked and outlet appears loose.",
+    createdAt: new Date(Date.now() - 1000 * 60 * 75).toISOString(),
+  },
+  {
+    _id: "3",
+    building: "Yates Hall",
+    room: "320",
+    category: "HVAC",
+    severity: "Low",
+    status: "RESOLVED",
+    imageUrls: [
+      "https://images.unsplash.com/photo-1564061170517-d3907caa96ea?auto=format&fit=crop&w=800&q=60",
+    ],
+    aiSummary: "Vent is blocked and airflow is weak; likely needs cleaning.",
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 20).toISOString(),
+  },
+];
+
+function timeAgo(iso) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "Just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
+
+function normalizeStatus(s) {
+  const v = (s || "").toUpperCase();
+  return ["NEW", "IN_REVIEW", "IN_PROGRESS", "RESOLVED"].includes(v) ? v : "NEW";
+}
+
+const SEVERITY_COLORS = {
+  High: { bg: "#FEF2F2", border: "#FCA5A5", text: "#DC2626", dot: "#EF4444" },
+  Medium: { bg: "#FFFBEB", border: "#FCD34D", text: "#D97706", dot: "#F59E0B" },
+  Low: { bg: "#F0FDF4", border: "#86EFAC", text: "#16A34A", dot: "#22C55E" },
+};
+
+const STATUS_COLORS = {
+  NEW: { bg: "#EFF6FF", border: "#93C5FD", text: "#2563EB", dot: "#3B82F6" },
+  IN_PROGRESS: { bg: "#FEF3C7", border: "#FCD34D", text: "#D97706", dot: "#F59E0B" },
+  RESOLVED: { bg: "#F0FDF4", border: "#86EFAC", text: "#16A34A", dot: "#22C55E" },
+};
 
 export default function HomeScreen({ navigation }) {
-  const [tickets, setTickets] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [tickets, setTickets] = useState(USE_MOCK ? MOCK_TICKETS : []);
   const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    loadTickets();
+  React.useEffect(() => {
+    if (USE_MOCK) {
+      setTickets(MOCK_TICKETS);
+    }
   }, []);
 
-  const loadTickets = async () => {
+  const onRefresh = async () => {
+    setRefreshing(true);
     try {
-      setLoading(true);
-      const response = await ticketAPI.getTickets();
-      setTickets(response.tickets || []);
-    } catch (error) {
-      console.error('Error loading tickets:', error);
-      Alert.alert('Error', 'Failed to load tickets. Make sure the backend is running.');
+      if (!USE_MOCK) {
+        // await fetchTickets();
+      } else {
+        await new Promise((r) => setTimeout(r, 600));
+      }
     } finally {
-      setLoading(false);
       setRefreshing(false);
     }
   };
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    loadTickets();
-  };
+  const counts = useMemo(() => {
+    const c = { NEW: 0, IN_PROGRESS: 0, RESOLVED: 0 };
+    tickets.forEach((t) => {
+      const s = normalizeStatus(t.status);
+      if (c[s] !== undefined) c[s]++;
+    });
+    return c;
+  }, [tickets]);
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'NEW': return '#3b82f6';
-      case 'IN_REVIEW': return '#f59e0b';
-      case 'IN_PROGRESS': return '#8b5cf6';
-      case 'RESOLVED': return '#10b981';
-      default: return '#6b7280';
-    }
-  };
+  const renderItem = ({ item }) => {
+    const severityStyle = SEVERITY_COLORS[item.severity] || SEVERITY_COLORS.Low;
+    const statusStyle = STATUS_COLORS[normalizeStatus(item.status)] || STATUS_COLORS.NEW;
 
-  const getSeverityColor = (severity) => {
-    switch (severity) {
-      case 'High': return '#dc2626';
-      case 'Medium': return '#f59e0b';
-      case 'Low': return '#10b981';
-      default: return '#6b7280';
-    }
-  };
+    return (
+      <Pressable
+        onPress={() => navigation.navigate("TicketDetail", { id: item._id })}
+        style={({ pressed }) => [
+          styles.card,
+          pressed && styles.cardPressed,
+        ]}
+      >
+        <Image source={{ uri: item.imageUrls?.[0] }} style={styles.thumb} />
 
-  const renderTicketItem = ({ item }) => (
-    <TouchableOpacity
-      style={styles.ticketCard}
-      onPress={() => navigation.navigate('TicketDetail', { ticketId: item._id })}
-    >
-      <View style={styles.ticketHeader}>
-        <Text style={styles.ticketTitle}>
-          {item.building} - Room {item.room}
-        </Text>
-        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-          <Text style={styles.statusText}>{item.status}</Text>
-        </View>
-      </View>
-
-      <View style={styles.ticketMeta}>
-        <View style={styles.categoryRow}>
-          <Text style={styles.category}>{item.category}</Text>
-          <View style={[styles.severityBadge, { backgroundColor: getSeverityColor(item.severity) }]}>
-            <Text style={styles.severityText}>{item.severity}</Text>
+        <View style={styles.cardContent}>
+          <View style={styles.cardHeader}>
+            <Text style={styles.location}>
+              {item.building}
+            </Text>
+            <View
+              style={[
+                styles.statusDot,
+                { backgroundColor: statusStyle.dot },
+              ]}
+            />
           </View>
-        </View>
-      </View>
 
-      {item.aiSummary && (
-        <Text style={styles.summary} numberOfLines={2}>
-          {item.aiSummary}
-        </Text>
-      )}
+          <Text style={styles.room}>Room {item.room}</Text>
 
-      <Text style={styles.date}>
-        {new Date(item.createdAt).toLocaleDateString()} at{' '}
-        {new Date(item.createdAt).toLocaleTimeString()}
-      </Text>
-    </TouchableOpacity>
-  );
+          <View style={styles.metaRow}>
+            <View style={[styles.categoryPill, { backgroundColor: severityStyle.bg, borderColor: severityStyle.border }]}>
+              <Text style={[styles.categoryText, { color: severityStyle.text }]}>{item.category}</Text>
+            </View>
+            <Text style={styles.timeText}>{timeAgo(item.createdAt)}</Text>
+          </View>
 
-  return (
-    <View style={styles.container}>
-      {tickets.length === 0 && !loading ? (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyText}>No tickets yet</Text>
-          <Text style={styles.emptySubtext}>
-            Tap the + button to submit your first maintenance ticket
+          <Text style={styles.summary} numberOfLines={2}>
+            {item.aiSummary}
           </Text>
         </View>
-      ) : (
-        <FlatList
-          data={tickets}
-          renderItem={renderTicketItem}
-          keyExtractor={(item) => item._id}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-          contentContainerStyle={styles.list}
-        />
-      )}
+      </Pressable>
+    );
+  };
 
-      <TouchableOpacity
-        style={styles.fab}
-        onPress={() => navigation.navigate('CreateTicket')}
+  return (
+    <SafeAreaView style={styles.safe}>
+      <FlatList
+        data={tickets}
+        keyExtractor={(t) => t._id}
+        renderItem={renderItem}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#3B82F6"
+          />
+        }
+        ListHeaderComponent={
+          <>
+            <View style={styles.headerSpacer} />
+            <View style={styles.headerContainer}>
+              <View style={styles.header}>
+                <Text style={styles.headerTitle}>Overview</Text>
+                
+                <View style={styles.statsGrid}>
+                  <StatCard label="New" value={counts.NEW} status="NEW" />
+                  <StatCard label="Active" value={counts.IN_PROGRESS} status="IN_PROGRESS" />
+                  <StatCard label="Resolved" value={counts.RESOLVED} status="RESOLVED" />
+                </View>
+              </View>
+
+              <Text style={styles.sectionTitle}>Recent Requests</Text>
+            </View>
+          </>
+        }
+        contentContainerStyle={{ paddingBottom: 120 }}
+        ListEmptyComponent={
+          <View style={styles.emptyState}>
+            <View style={styles.emptyIcon}>
+              <View style={styles.emptyCheckmark}>
+                <View style={styles.checkmarkLine1} />
+                <View style={styles.checkmarkLine2} />
+              </View>
+            </View>
+            <Text style={styles.emptyText}>All caught up</Text>
+            <Text style={styles.emptySubtext}>No active requests at the moment</Text>
+          </View>
+        }
+      />
+
+      <Pressable
+        onPress={() => navigation.navigate("CreateTicket")}
+        style={({ pressed }) => [
+          styles.fab,
+          pressed && styles.fabPressed,
+        ]}
       >
         <Text style={styles.fabText}>+</Text>
-      </TouchableOpacity>
+      </Pressable>
+    </SafeAreaView>
+  );
+}
+
+function StatCard({ label, value, status }) {
+  const colors = STATUS_COLORS[status] || STATUS_COLORS.NEW;
+
+  return (
+    <View style={[styles.statCard, { backgroundColor: colors.bg, borderColor: colors.border }]}>
+      <Text style={[styles.statValue, { color: colors.text }]}>{value}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f3f4f6',
+  safe: { flex: 1, backgroundColor: "#F8FAFC" },
+
+  headerSpacer: {
+    height: Platform.OS === "ios" ? 100 : 80,
   },
-  list: {
-    padding: 16,
+  headerContainer: { 
+    paddingHorizontal: 16,
+    marginBottom: 16,
   },
-  ticketCard: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
+  header: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
+    shadowColor: "#0F172A",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  ticketHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
+  headerTitle: {
+    color: "#0F172A",
+    fontSize: 20,
+    fontWeight: "700",
+    marginBottom: 16,
+    letterSpacing: -0.4,
   },
-  ticketTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#111827',
+  
+  statsGrid: { 
+    flexDirection: "row", 
+    gap: 12,
+  },
+  statCard: {
     flex: 1,
-  },
-  statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
     borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
   },
-  statusText: {
-    color: 'white',
-    fontSize: 11,
-    fontWeight: '600',
+  statValue: {
+    fontSize: 24,
+    fontWeight: "700",
+    letterSpacing: -0.5,
+    marginBottom: 2,
   },
-  ticketMeta: {
-    marginBottom: 8,
+  statLabel: {
+    color: "#64748B",
+    fontSize: 12,
+    fontWeight: "500",
   },
-  categoryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+
+  sectionTitle: {
+    color: "#0F172A",
+    fontSize: 17,
+    fontWeight: "600",
+    marginBottom: 12,
+    letterSpacing: -0.3,
   },
-  category: {
-    fontSize: 14,
-    color: '#6b7280',
-    fontWeight: '500',
+
+  card: {
+    flexDirection: "row",
+    gap: 12,
+    padding: 12,
+    marginHorizontal: 16,
+    marginBottom: 12,
+    borderRadius: 12,
+    backgroundColor: "#FFFFFF",
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
   },
-  severityBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
+  cardPressed: {
+    opacity: 0.7,
+    transform: [{ scale: 0.98 }],
+  },
+  thumb: {
+    width: 80,
+    height: 80,
     borderRadius: 8,
+    backgroundColor: "#F1F5F9",
   },
-  severityText: {
-    color: 'white',
+  cardContent: { 
+    flex: 1,
+    justifyContent: "space-between",
+  },
+  cardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  location: {
+    color: "#0F172A",
+    fontWeight: "600",
+    fontSize: 15,
+    letterSpacing: -0.2,
+  },
+  room: {
+    color: "#64748B",
+    fontSize: 13,
+    fontWeight: "500",
+    marginTop: 2,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  metaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 8,
+  },
+  categoryPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  categoryText: {
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: "600",
+    letterSpacing: 0.2,
+  },
+  timeText: {
+    color: "#94A3B8",
+    fontSize: 11,
+    fontWeight: "500",
   },
   summary: {
-    fontSize: 14,
-    color: '#374151',
-    marginBottom: 8,
-    lineHeight: 20,
+    color: "#475569",
+    fontSize: 13,
+    lineHeight: 18,
+    marginTop: 6,
   },
-  date: {
-    fontSize: 12,
-    color: '#9ca3af',
-  },
+
   emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 32,
+    alignItems: "center",
+    paddingVertical: 60,
+  },
+  emptyIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: "#F0FDF4",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
+  },
+  emptyCheckmark: {
+    width: 28,
+    height: 28,
+    position: "relative",
+  },
+  checkmarkLine1: {
+    position: "absolute",
+    width: 3,
+    height: 12,
+    backgroundColor: "#22C55E",
+    borderRadius: 2,
+    transform: [{ rotate: "45deg" }],
+    left: 8,
+    top: 12,
+  },
+  checkmarkLine2: {
+    position: "absolute",
+    width: 3,
+    height: 20,
+    backgroundColor: "#22C55E",
+    borderRadius: 2,
+    transform: [{ rotate: "-45deg" }],
+    left: 14,
+    top: 4,
   },
   emptyText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#6b7280',
-    marginBottom: 8,
+    color: "#0F172A",
+    fontSize: 18,
+    fontWeight: "600",
   },
   emptySubtext: {
+    color: "#64748B",
     fontSize: 14,
-    color: '#9ca3af',
-    textAlign: 'center',
+    marginTop: 4,
   },
+
   fab: {
-    position: 'absolute',
+    position: "absolute",
     right: 20,
-    bottom: 20,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#2563eb',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
+    bottom: 32,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: "#3B82F6",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#3B82F6",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
-    shadowRadius: 4,
+    shadowRadius: 8,
     elevation: 8,
   },
+  fabPressed: {
+    transform: [{ scale: 0.94 }],
+  },
   fabText: {
-    fontSize: 32,
-    color: 'white',
-    fontWeight: '300',
+    color: "#FFFFFF",
+    fontSize: 28,
+    fontWeight: "400",
+    marginTop: -2,
   },
 });
