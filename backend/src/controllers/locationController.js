@@ -2,8 +2,7 @@ import Location from '../models/Location.js';
 
 export const getLocations = async (req, res) => {
   try {
-    const locations = await Location.find({ isActive: true })
-      .sort({ name: 1 });
+    const locations = await Location.find({ isActive: true }).sort({ name: 1 });
 
     res.json({
       success: true,
