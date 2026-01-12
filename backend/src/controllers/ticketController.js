@@ -20,7 +20,7 @@ export const createTicket = async (req, res) => {
     }
 
     // Upload images to Cloudinary
-    console.log('📤 Uploading images to Cloudinary...');
+    console.log('Uploading images to Cloudinary...');
     const imageUrls = [];
     for (const file of req.files) {
       const url = await uploadToCloudinary(file.buffer);
@@ -45,7 +45,7 @@ export const createTicket = async (req, res) => {
     });
 
     // Analyze with Gemini AI (async, don't block)
-    console.log('🤖 Analyzing ticket with Gemini AI...');
+    console.log('Analyzing ticket with Gemini AI...');
     try {
       const aiAnalysis = await analyzeTicketWithGemini({
         imageUrl: imageUrls[0],
