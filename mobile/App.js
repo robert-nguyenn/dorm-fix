@@ -8,6 +8,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import HomeScreen from "./src/screens/HomeScreen";
 import CreateTicketScreen from "./src/screens/CreateTicketScreen";
 import TicketDetailScreen from "./src/screens/TicketDetailScreen";
+import LoginScreen from "./src/screens/LoginScreen";
+import SignUpScreen from "./src/screens/SignUpScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -51,7 +53,7 @@ export default function App() {
     <NavigationContainer theme={navTheme}>
       <StatusBar style="dark" />
       <Stack.Navigator
-        initialRouteName="Home"
+        initialRouteName="Login"
         screenOptions={{
           headerTintColor: "#0F172A",
           headerTitleAlign: "left",
@@ -79,6 +81,22 @@ export default function App() {
           animation: "slide_from_right",
         }}
       >
+        <Stack.Screen
+          name="Login"
+          component={LoginScreen}
+          options={{
+            headerShown: false,
+          }}
+        />
+
+        <Stack.Screen
+          name="SignUp"
+          component={SignUpScreen}
+          options={{
+            headerShown: false,
+          }}
+        />
+
         <Stack.Screen
           name="Home"
           component={HomeScreen}
