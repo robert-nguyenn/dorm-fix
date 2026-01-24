@@ -50,30 +50,12 @@ const navTheme = {
 };
 
 export default function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(null);
-
-  useEffect(() => {
-    checkAuth();
-  }, []);
-
-  const checkAuth = async () => {
-    const loggedIn = await authAPI.isLoggedIn();
-    setIsLoggedIn(loggedIn);
-  };
-
-  if (isLoggedIn === null) {
-    return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#F8FAFC" }}>
-        <ActivityIndicator size="large" color="#3B82F6" />
-      </View>
-    );
-  }
-
+  // Temporarily bypass authentication - go straight to Home
   return (
     <NavigationContainer theme={navTheme}>
       <StatusBar style="dark" />
       <Stack.Navigator
-        initialRouteName={isLoggedIn ? "Home" : "Login"}
+        initialRouteName="Home"
         screenOptions={{
           headerTintColor: "#0F172A",
           headerTitleAlign: "left",

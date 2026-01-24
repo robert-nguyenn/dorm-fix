@@ -19,27 +19,8 @@ export default function LoginScreen({ navigation }) {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert("Missing fields", "Please enter both email and password");
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      const response = await authAPI.login({ email, password });
-      
-      if (response.success) {
-        // Navigate to main app
-        navigation.replace("Home");
-      }
-    } catch (error) {
-      console.error("Login error:", error);
-      const errorMsg = error.response?.data?.error?.message || "Login failed. Please try again.";
-      Alert.alert("Login Failed", errorMsg);
-    } finally {
-      setIsLoading(false);
-    }
+    // Temporarily bypass login - go straight to signup
+    navigation.navigate("SignUp");
   };
 
   return (

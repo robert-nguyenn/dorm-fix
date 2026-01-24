@@ -48,7 +48,7 @@
       ]
     ],
     "extra": {
-      "apiUrl": "http://10.84.5.209:3000"
+      "apiUrl": "https://nonsovereignly-bogus-eldora.ngrok-free.dev"
     }
   }
 }
