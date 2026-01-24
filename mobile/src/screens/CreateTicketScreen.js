@@ -12,31 +12,20 @@ import {
   Platform,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
-
-const USE_MOCK = true;
+import { ticketAPI } from "../services/api";
 
 const BUILDINGS = ["Pearsons Hall", "Caws Hall", "Yates Hall", "Miller Hall"];
-const CATEGORIES = ["Plumbing", "Electrical", "HVAC", "Furniture", "Other"];
-const SEVERITIES = ["Low", "Medium", "High"];
-
-const severityMeta = {
-  Low: { dot: "#22C55E", bg: "#F0FDF4", border: "#86EFAC", text: "#16A34A" },
-  Medium: { dot: "#F59E0B", bg: "#FFFBEB", border: "#FCD34D", text: "#D97706" },
-  High: { dot: "#EF4444", bg: "#FEF2F2", border: "#FCA5A5", text: "#DC2626" },
-};
 
 export default function CreateTicketScreen({ navigation }) {
   const [building, setBuilding] = useState("");
   const [room, setRoom] = useState("");
-  const [category, setCategory] = useState("");
-  const [severity, setSeverity] = useState("Medium");
   const [description, setDescription] = useState("");
   const [images, setImages] = useState([]); // array of local URIs
   const [submitting, setSubmitting] = useState(false);
 
   const canSubmit = useMemo(() => {
-    return Boolean(building && room && category && !submitting);
-  }, [building, room, category, submitting]);
+    return Boolean(building && room && images.length > 0 && !submitting);
+  }, [building, room, images, submitting]);
 
   const pickImage = async () => {
     if (images.length >= 3) {
@@ -68,62 +57,57 @@ export default function CreateTicketScreen({ navigation }) {
   };
 
   const handleSubmit = async () => {
-    if (!building || !room || !category) {
-      Alert.alert("Missing fields", "Building, room, and category are required.");
+    if (!building || !room) {
+      Alert.alert("Missing fields", "Building and room are required.");
+      return;
+    }
+
+    if (images.length === 0) {
+      Alert.alert("No images", "Please add at least one photo of the issue.");
       return;
     }
 
     setSubmitting(true);
 
     try {
-      if (!USE_MOCK) {
-        /**
-         * 🔌 BACKEND CONNECTION POINT (matches your mobile conventions)
-         *
-         * 1) Import:
-         *    import { ticketAPI } from "../services/api";
-         *
-         * 2) Build FormData with key `images` (multipart/form-data):
-         *
-         *    const form = new FormData();
-         *    form.append("building", building);
-         *    form.append("room", room);
-         *    form.append("category", category);
-         *    form.append("severity", severity);
-         *    if (description) form.append("description", description);
-         *
-         *    images.forEach((uri, i) => {
-         *      form.append("images", {
-         *        uri,
-         *        type: "image/jpeg",
-         *        name: `issue-${Date.now()}-${i}.jpg`,
-         *      });
-         *    });
-         *
-         * 3) Call:
-         *    await ticketAPI.createTicket(form);
-         *
-         * NOTE: Keep `images` key (not `image`, not `files`) so it matches backend.
-         */
-      } else {
-        // Mock submit: log payload and simulate network latency
-        const payload = { building, room, category, severity, description, images };
-        console.log("MOCK SUBMIT:", payload);
-        await new Promise((r) => setTimeout(r, 550));
+      // Build FormData for image upload
+      const form = new FormData();
+      form.append("building", building);
+      form.append("room", room);
+      
+      // Backend expects userNote instead of description
+      if (description) form.append("userNote", description);
+      
+      // Append images
+      if (images.length === 0) {
+        Alert.alert("No images", "Please add at least one photo of the issue.");
+        setSubmitting(false);
+        return;
       }
 
-      Alert.alert("Submitted", "Your request has been created.", [
+      images.forEach((uri, i) => {
+        form.append("images", {
+          uri,
+          type: "image/jpeg",
+          name: `issue-${Date.now()}-${i}.jpg`,
+        });
+      });
+
+      // Call backend API
+      const response = await ticketAPI.createTicket(form);
+      console.log("Ticket created:", response.ticket._id);
+
+      Alert.alert("Submitted", "Your request has been created successfully!", [
         { text: "OK", onPress: () => navigation.goBack() },
       ]);
     } catch (e) {
       console.log("Submit error:", e);
-      Alert.alert("Error", "Could not submit your ticket. Please try again.");
+      const errorMsg = e.response?.data?.error?.message || e.message || "Could not submit your ticket. Please try again.";
+      Alert.alert("Error", errorMsg);
     } finally {
       setSubmitting(false);
     }
   };
-
-  const sevStyle = severityMeta[severity] || severityMeta.Medium;
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -186,62 +170,20 @@ export default function CreateTicketScreen({ navigation }) {
           />
         </View>
 
-        {/* Issue */}
+        {/* Issue Details */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Issue</Text>
-          <Text style={styles.cardCaption}>Category + priority (required)</Text>
+          <Text style={styles.cardTitle}>Details</Text>
+          <Text style={styles.cardCaption}>Describe the issue (optional - AI will analyze from photos)</Text>
 
-          <Text style={styles.label}>Category</Text>
-          <View style={styles.chipGrid}>
-            {CATEGORIES.map((c) => (
-              <Pressable
-                key={c}
-                onPress={() => setCategory(c)}
-                style={({ pressed }) => [
-                  styles.chip,
-                  category === c && styles.chipActive,
-                  pressed && styles.pressed,
-                ]}
-              >
-                <Text style={[styles.chipText, category === c && styles.chipTextActive]}>
-                  {c}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-
-          <Text style={styles.label}>Priority</Text>
-          <View style={styles.priorityRow}>
-            {SEVERITIES.map((s) => {
-              const sMeta = severityMeta[s];
-              const active = severity === s;
-              return (
-                <Pressable
-                  key={s}
-                  onPress={() => setSeverity(s)}
-                  style={({ pressed }) => [
-                    styles.priorityChip,
-                    active && { backgroundColor: sMeta.bg, borderColor: sMeta.border },
-                    pressed && styles.pressed,
-                  ]}
-                >
-                  <View style={[styles.dot, { backgroundColor: sMeta.dot }]} />
-                  <Text style={[styles.priorityText, active && { color: sMeta.text }]}>
-                    {s}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-
-          <Text style={styles.label}>Notes (optional)</Text>
+          <Text style={styles.label}>Additional notes</Text>
           <TextInput
             value={description}
             onChangeText={setDescription}
-            placeholder="Anything helpful for facilities…"
+            placeholder="Any additional details that might help…"
             placeholderTextColor="#94A3B8"
             style={[styles.input, styles.textArea]}
             multiline
+            numberOfLines={4}
           />
         </View>
 
@@ -271,17 +213,9 @@ export default function CreateTicketScreen({ navigation }) {
             {images.length === 0 && (
               <View style={styles.photoEmpty}>
                 <Text style={styles.photoEmptyIcon}>📷</Text>
-                <Text style={styles.photoEmptyText}>Add a photo to auto-fill the ticket.</Text>
+                <Text style={styles.photoEmptyText}>AI will analyze photos to categorize & prioritize</Text>
               </View>
             )}
-          </View>
-
-          {/* Little “preview” pill */}
-          <View style={[styles.previewPill, { backgroundColor: sevStyle.bg, borderColor: sevStyle.border }]}>
-            <View style={[styles.dot, { backgroundColor: sevStyle.dot }]} />
-            <Text style={[styles.previewText, { color: sevStyle.text }]}>
-              Priority: {severity}
-            </Text>
           </View>
         </View>
 

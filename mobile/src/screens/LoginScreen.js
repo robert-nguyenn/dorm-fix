@@ -9,7 +9,9 @@ import {
   Platform,
   ScrollView,
   SafeAreaView,
+  Alert,
 } from "react-native";
+import { authAPI } from "../services/api";
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState("");
@@ -18,30 +20,26 @@ export default function LoginScreen({ navigation }) {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      alert("Please enter both email and password");
+      Alert.alert("Missing fields", "Please enter both email and password");
       return;
     }
 
     setIsLoading(true);
 
-    // 🔌 BACKEND CONNECTION POINT
-    // Replace this mock login with real authentication
-    // Example:
-    // try {
-    //   const response = await authAPI.login(email, password);
-    //   if (response.success) {
-    //     navigation.replace("Home");
-    //   }
-    // } catch (error) {
-    //   alert("Login failed");
-    // }
-
-    // Mock login - accept any credentials for now
-    setTimeout(() => {
+    try {
+      const response = await authAPI.login({ email, password });
+      
+      if (response.success) {
+        // Navigate to main app
+        navigation.replace("Home");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      const errorMsg = error.response?.data?.error?.message || "Login failed. Please try again.";
+      Alert.alert("Login Failed", errorMsg);
+    } finally {
       setIsLoading(false);
-      // Navigate to main app
-      navigation.replace("Home");
-    }, 1000);
+    }
   };
 
   return (

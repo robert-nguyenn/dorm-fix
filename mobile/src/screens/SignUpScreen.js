@@ -9,7 +9,9 @@ import {
   Platform,
   ScrollView,
   SafeAreaView,
+  Alert,
 } from "react-native";
+import { authAPI } from "../services/api";
 
 export default function SignUpScreen({ navigation }) {
   const [name, setName] = useState("");
@@ -22,43 +24,44 @@ export default function SignUpScreen({ navigation }) {
 
   const handleSignUp = async () => {
     // Validation
-    if (!name || !email || !password || !building || !room) {
-      alert("Please fill in all required fields");
+    if (!name || !email || !password) {
+      Alert.alert("Missing fields", "Name, email, and password are required");
       return;
     }
 
     if (password !== confirmPassword) {
-      alert("Passwords don't match");
+      Alert.alert("Password mismatch", "Passwords don't match");
       return;
     }
 
     if (password.length < 6) {
-      alert("Password must be at least 6 characters");
+      Alert.alert("Weak password", "Password must be at least 6 characters");
       return;
     }
 
     setIsLoading(true);
 
-    // 🔌 BACKEND CONNECTION POINT
-    // Replace this mock signup with real registration
-    // Example:
-    // try {
-    //   const response = await authAPI.signup({
-    //     name, email, password, building, room
-    //   });
-    //   if (response.success) {
-    //     navigation.replace("Home");
-    //   }
-    // } catch (error) {
-    //   alert("Sign up failed: " + error.message);
-    // }
-
-    // Mock signup - accept any credentials for now
-    setTimeout(() => {
+    try {
+      const response = await authAPI.signup({
+        name,
+        email,
+        password,
+        confirmPassword,
+        building,
+        room
+      });
+      
+      if (response.success) {
+        // Navigate to main app
+        navigation.replace("Home");
+      }
+    } catch (error) {
+      console.error("Signup error:", error);
+      const errorMsg = error.response?.data?.error?.message || "Sign up failed. Please try again.";
+      Alert.alert("Sign Up Failed", errorMsg);
+    } finally {
       setIsLoading(false);
-      // Navigate to main app
-      navigation.replace("Home");
-    }, 1000);
+    }
   };
 
   return (

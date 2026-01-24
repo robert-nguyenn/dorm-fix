@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,26 +8,11 @@ import {
   SafeAreaView,
   Dimensions,
   Platform,
+  ActivityIndicator,
 } from "react-native";
+import { ticketAPI } from "../services/api";
 
 const { width } = Dimensions.get("window");
-
-const MOCK_DETAIL = {
-  _id: "1",
-  building: "Pearsons Hall",
-  room: "214",
-  category: "Plumbing",
-  severity: "High",
-  status: "IN_PROGRESS",
-  imageUrls: [
-    "https://images.unsplash.com/photo-1581579186983-3e0b8b3d8df0?auto=format&fit=crop&w=800&q=60",
-  ],
-  aiSummary: "Sink is leaking under the cabinet; water pooling near pipe connection.",
-  description: "There's a significant leak coming from under the bathroom sink. Water is pooling on the floor and the cabinet is getting damaged. This needs immediate attention.",
-  createdAt: new Date(Date.now() - 1000 * 60 * 22).toISOString(),
-  updatedAt: new Date(Date.now() - 1000 * 60 * 10).toISOString(),
-  assignedTo: "Maintenance Team A",
-};
 
 const SEVERITY_COLORS = {
   High: { bg: "#FEF2F2", border: "#FCA5A5", text: "#DC2626" },
@@ -52,7 +37,46 @@ function timeAgo(iso) {
 }
 
 export default function TicketDetailScreen({ route }) {
-  const ticket = MOCK_DETAIL;
+  const { id } = route.params;
+  const [ticket, setTicket] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchTicket = async () => {
+      try {
+        const response = await ticketAPI.getTicketById(id);
+        setTicket(response.ticket);
+      } catch (error) {
+        console.error("Error fetching ticket:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTicket();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#3B82F6" />
+          <Text style={styles.loadingText}>Loading ticket...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!ticket) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.errorText}>Ticket not found</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   const severityStyle = SEVERITY_COLORS[ticket.severity] || SEVERITY_COLORS.Low;
   const statusInfo = STATUS_INFO[ticket.status] || STATUS_INFO.NEW;
 
@@ -103,34 +127,25 @@ export default function TicketDetailScreen({ route }) {
             </View>
           </View>
 
-          {ticket.description && (
+          {ticket.userNote && (
             <>
               <View style={styles.divider} />
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Description</Text>
-                <Text style={styles.descriptionText}>{ticket.description}</Text>
+                <Text style={styles.sectionTitle}>User Notes</Text>
+                <Text style={styles.descriptionText}>{ticket.userNote}</Text>
               </View>
             </>
           )}
 
-          <View style={styles.divider} />
-
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Assignment</Text>
-            <View style={styles.assignmentCard}>
-              <View style={styles.assignmentIcon}>
-                <Text style={styles.assignmentInitial}>
-                  {ticket.assignedTo?.[0] || "?"}
-                </Text>
+          {ticket.facilitiesDescription && (
+            <>
+              <View style={styles.divider} />
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Facilities Description</Text>
+                <Text style={styles.descriptionText}>{ticket.facilitiesDescription}</Text>
               </View>
-              <View>
-                <Text style={styles.assignmentName}>{ticket.assignedTo || "Unassigned"}</Text>
-                <Text style={styles.assignmentMeta}>
-                  Updated {timeAgo(ticket.updatedAt)}
-                </Text>
-              </View>
-            </View>
-          </View>
+            </>
+          )}
 
           <View style={styles.divider} />
 
@@ -142,14 +157,16 @@ export default function TicketDetailScreen({ route }) {
                 time={timeAgo(ticket.createdAt)}
                 active
               />
-              <TimelineItem
-                label="AI Analysis Complete"
-                time={timeAgo(ticket.createdAt)}
-                active
-              />
-              {ticket.status !== "NEW" && (
+              {ticket.aiSummary && (
                 <TimelineItem
-                  label="Assigned to Team"
+                  label="AI Analysis Complete"
+                  time={timeAgo(ticket.createdAt)}
+                  active
+                />
+              )}
+              {ticket.status === "IN_PROGRESS" && (
+                <TimelineItem
+                  label="In Progress"
                   time={timeAgo(ticket.updatedAt)}
                   active
                 />
@@ -363,5 +380,22 @@ const styles = StyleSheet.create({
     color: "#64748B",
     fontSize: 12,
     marginTop: 2,
+  },
+  
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+  loadingText: {
+    marginTop: 12,
+    color: "#64748B",
+    fontSize: 14,
+  },
+  errorText: {
+    color: "#DC2626",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });

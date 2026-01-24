@@ -1,9 +1,10 @@
-import React from "react";
-import { Platform, View, Text, StyleSheet } from "react-native";
+import React, { useState, useEffect } from "react";
+import { Platform, View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { LinearGradient } from "expo-linear-gradient";
+import { authAPI } from "./src/services/api";
 
 import HomeScreen from "./src/screens/HomeScreen";
 import CreateTicketScreen from "./src/screens/CreateTicketScreen";
@@ -49,11 +50,30 @@ const navTheme = {
 };
 
 export default function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(null);
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    const loggedIn = await authAPI.isLoggedIn();
+    setIsLoggedIn(loggedIn);
+  };
+
+  if (isLoggedIn === null) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#F8FAFC" }}>
+        <ActivityIndicator size="large" color="#3B82F6" />
+      </View>
+    );
+  }
+
   return (
     <NavigationContainer theme={navTheme}>
       <StatusBar style="dark" />
       <Stack.Navigator
-        initialRouteName="Login"
+        initialRouteName={isLoggedIn ? "Home" : "Login"}
         screenOptions={{
           headerTintColor: "#0F172A",
           headerTitleAlign: "left",

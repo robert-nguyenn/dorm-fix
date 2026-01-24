@@ -9,53 +9,10 @@ import {
   RefreshControl,
   SafeAreaView,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-
-const USE_MOCK = true;
-
-const MOCK_TICKETS = [
-  {
-    _id: "1",
-    building: "Pearsons Hall",
-    room: "214",
-    category: "Plumbing",
-    severity: "High",
-    status: "IN_PROGRESS",
-    imageUrls: [
-      "https://images.unsplash.com/photo-1581579186983-3e0b8b3d8df0?auto=format&fit=crop&w=800&q=60",
-    ],
-    aiSummary:
-      "Sink is leaking under the cabinet; water pooling near pipe connection.",
-    createdAt: new Date(Date.now() - 1000 * 60 * 22).toISOString(),
-  },
-  {
-    _id: "2",
-    building: "Caws Hall",
-    room: "108",
-    category: "Electrical",
-    severity: "Medium",
-    status: "NEW",
-    imageUrls: [
-      "https://images.unsplash.com/photo-1523413651479-597eb2da0ad6?auto=format&fit=crop&w=800&q=60",
-    ],
-    aiSummary: "Outlet plate is cracked and outlet appears loose.",
-    createdAt: new Date(Date.now() - 1000 * 60 * 75).toISOString(),
-  },
-  {
-    _id: "3",
-    building: "Yates Hall",
-    room: "320",
-    category: "HVAC",
-    severity: "Low",
-    status: "RESOLVED",
-    imageUrls: [
-      "https://images.unsplash.com/photo-1564061170517-d3907caa96ea?auto=format&fit=crop&w=800&q=60",
-    ],
-    aiSummary: "Vent is blocked and airflow is weak; likely needs cleaning.",
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 20).toISOString(),
-  },
-];
+import { ticketAPI } from "../services/api";
 
 function timeAgo(iso) {
   const diff = Date.now() - new Date(iso).getTime();
@@ -85,23 +42,29 @@ const STATUS_COLORS = {
 };
 
 export default function HomeScreen({ navigation }) {
-  const [tickets, setTickets] = useState(USE_MOCK ? MOCK_TICKETS : []);
+  const [tickets, setTickets] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  const fetchTickets = async () => {
+    try {
+      const response = await ticketAPI.getTickets();
+      setTickets(response.tickets || []);
+    } catch (error) {
+      console.error("Error fetching tickets:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   React.useEffect(() => {
-    if (USE_MOCK) {
-      setTickets(MOCK_TICKETS);
-    }
+    fetchTickets();
   }, []);
 
   const onRefresh = async () => {
     setRefreshing(true);
     try {
-      if (!USE_MOCK) {
-        // await fetchTickets();
-      } else {
-        await new Promise((r) => setTimeout(r, 600));
-      }
+      await fetchTickets();
     } finally {
       setRefreshing(false);
     }
@@ -162,10 +125,16 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <FlatList
-        data={tickets}
-        keyExtractor={(t) => t._id}
-        renderItem={renderItem}
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#3B82F6" />
+          <Text style={styles.loadingText}>Loading tickets...</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={tickets}
+          keyExtractor={(t) => t._id}
+          renderItem={renderItem}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -204,7 +173,8 @@ export default function HomeScreen({ navigation }) {
             <Text style={styles.emptySubtext}>No active requests at the moment</Text>
           </View>
         }
-      />
+        />
+      )}
 
       <Pressable
         onPress={() => navigation.navigate("CreateTicket")}
@@ -441,5 +411,17 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: "400",
     marginTop: -2,
+  },
+
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+  loadingText: {
+    color: "#64748B",
+    fontSize: 16,
+    marginTop: 12,
   },
 });

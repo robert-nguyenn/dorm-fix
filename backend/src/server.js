@@ -11,6 +11,7 @@ dotenv.config();
 // Import routes (we'll create these next)
 import ticketRoutes from './routes/tickets.js';
 import locationRoutes from './routes/locations.js';
+import authRoutes from './routes/auth.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -39,6 +40,7 @@ app.get('/health', (req, res) => {
 });
 
 // API Routes
+app.use('/api/auth', authRoutes);
 app.use('/api/tickets', ticketRoutes);
 app.use('/api/locations', locationRoutes);
 

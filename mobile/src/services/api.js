@@ -1,5 +1,6 @@
 import axios from 'axios';
 import Constants from 'expo-constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const API_URL = Constants.expoConfig?.extra?.apiUrl || 'http://localhost:3000';
 
@@ -10,6 +11,67 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
+// Add auth token to requests
+api.interceptors.request.use(
+  async (config) => {
+    const token = await AsyncStorage.getItem('authToken');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Auth API
+export const authAPI = {
+  // Sign up new user
+  signup: async (userData) => {
+    const response = await api.post('/auth/signup', userData);
+    if (response.data.token) {
+      await AsyncStorage.setItem('authToken', response.data.token);
+      await AsyncStorage.setItem('user', JSON.stringify(response.data.user));
+    }
+    return response.data;
+  },
+
+  // Login user
+  login: async (credentials) => {
+    const response = await api.post('/auth/login', credentials);
+    if (response.data.token) {
+      await AsyncStorage.setItem('authToken', response.data.token);
+      await AsyncStorage.setItem('user', JSON.stringify(response.data.user));
+    }
+    return response.data;
+  },
+
+  // Get current user
+  getMe: async () => {
+    const response = await api.get('/auth/me');
+    return response.data;
+  },
+
+  // Logout
+  logout: async () => {
+    await AsyncStorage.removeItem('authToken');
+    await AsyncStorage.removeItem('user');
+  },
+
+  // Check if user is logged in
+  isLoggedIn: async () => {
+    const token = await AsyncStorage.getItem('authToken');
+    return !!token;
+  },
+
+  // Get stored user
+  getStoredUser: async () => {
+    const userStr = await AsyncStorage.getItem('user');
+    return userStr ? JSON.parse(userStr) : null;
+  },
+};
 
 // Ticket API
 export const ticketAPI = {
