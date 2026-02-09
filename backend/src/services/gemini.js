@@ -16,7 +16,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
  */
 export const analyzeTicketWithGemini = async ({ imageUrl, building, room, userNote }) => {
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
     const prompt = `You are an expert facilities maintenance ticket analyzer. Analyze this maintenance issue photo and provide a structured assessment.
 
