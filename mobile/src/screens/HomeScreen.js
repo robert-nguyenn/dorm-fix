@@ -13,6 +13,9 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { ticketAPI } from "../services/api";
+import { useTheme } from "../theme";
+
+const TITLE_FONT = Platform.select({ ios: "Avenir Next", android: "sans-serif-condensed" });
 
 function timeAgo(iso) {
   const diff = Date.now() - new Date(iso).getTime();
@@ -36,12 +39,14 @@ const SEVERITY_COLORS = {
 };
 
 const STATUS_COLORS = {
-  NEW: { bg: "#EFF6FF", border: "#93C5FD", text: "#2563EB", dot: "#3B82F6" },
-  IN_PROGRESS: { bg: "#FEF3C7", border: "#FCD34D", text: "#D97706", dot: "#F59E0B" },
-  RESOLVED: { bg: "#F0FDF4", border: "#86EFAC", text: "#16A34A", dot: "#22C55E" },
+  NEW: { bg: "rgba(255,255,255,0.14)", border: "rgba(255,255,255,0.25)", text: "#FFFFFF", dot: "#7DD3FC" },
+  IN_PROGRESS: { bg: "rgba(255,255,255,0.14)", border: "rgba(255,255,255,0.25)", text: "#FFFFFF", dot: "#FBBF24" },
+  RESOLVED: { bg: "rgba(255,255,255,0.14)", border: "rgba(255,255,255,0.25)", text: "#FFFFFF", dot: "#34D399" },
 };
 
 export default function HomeScreen({ navigation }) {
+  const { theme, mode, toggleTheme } = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const [tickets, setTickets] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -123,11 +128,22 @@ export default function HomeScreen({ navigation }) {
     );
   };
 
+  const StatCard = ({ label, value, status }) => {
+    const colors = STATUS_COLORS[status] || STATUS_COLORS.NEW;
+
+    return (
+      <View style={[styles.statCard, { backgroundColor: colors.bg, borderColor: colors.border }]}>
+        <Text style={[styles.statValue, { color: colors.text }]}>{value}</Text>
+        <Text style={styles.statLabel}>{label}</Text>
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.safe}>
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#3B82F6" />
+          <ActivityIndicator size="large" color={theme.accent} />
           <Text style={styles.loadingText}>Loading tickets...</Text>
         </View>
       ) : (
@@ -135,44 +151,65 @@ export default function HomeScreen({ navigation }) {
           data={tickets}
           keyExtractor={(t) => t._id}
           renderItem={renderItem}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor="#3B82F6"
-          />
-        }
-        ListHeaderComponent={
-          <>
-            <View style={styles.headerSpacer} />
-            <View style={styles.headerContainer}>
-              <View style={styles.header}>
-                <Text style={styles.headerTitle}>Overview</Text>
-                
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor="#0EA5A4"
+            />
+          }
+          ListHeaderComponent={
+            <>
+              <View style={styles.heroWrap}>
+                <LinearGradient
+                  colors={theme.heroGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.hero}
+                >
+                  <View style={styles.heroTopRow}>
+                    <View style={styles.heroCopy}>
+                      <Text style={styles.heroEyebrow}>DormFix</Text>
+                      <Text style={styles.heroTitle}>Maintenance Overview</Text>
+                      <Text style={styles.heroSub}>
+                        Live campus requests and service health at a glance.
+                      </Text>
+                    </View>
+
+                    <Pressable onPress={toggleTheme} style={styles.themeToggle}>
+                      <Text style={styles.themeToggleText}>
+                        {mode === "dark" ? "Dark" : "Light"}
+                      </Text>
+                    </Pressable>
+                  </View>
+
                 <View style={styles.statsGrid}>
                   <StatCard label="New" value={counts.NEW} status="NEW" />
                   <StatCard label="Active" value={counts.IN_PROGRESS} status="IN_PROGRESS" />
                   <StatCard label="Resolved" value={counts.RESOLVED} status="RESOLVED" />
                 </View>
-              </View>
+              </LinearGradient>
+            </View>
 
-              <Text style={styles.sectionTitle}>Recent Requests</Text>
-            </View>
-          </>
-        }
-        contentContainerStyle={{ paddingBottom: 120 }}
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <View style={styles.emptyIcon}>
-              <View style={styles.emptyCheckmark}>
-                <View style={styles.checkmarkLine1} />
-                <View style={styles.checkmarkLine2} />
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Recent Requests</Text>
+                <Text style={styles.sectionCaption}>Latest 100 submissions</Text>
               </View>
+            </>
+          }
+          contentContainerStyle={{ paddingBottom: 120, paddingTop: 6 }}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <View style={styles.emptyIcon}>
+                <View style={styles.emptyCheckmark}>
+                  <View style={styles.checkmarkLine1} />
+                  <View style={styles.checkmarkLine2} />
+                </View>
+              </View>
+              <Text style={styles.emptyText}>All caught up</Text>
+              <Text style={styles.emptySubtext}>No active requests at the moment</Text>
             </View>
-            <Text style={styles.emptyText}>All caught up</Text>
-            <Text style={styles.emptySubtext}>No active requests at the moment</Text>
-          </View>
-        }
+          }
         />
       )}
 
@@ -189,44 +226,66 @@ export default function HomeScreen({ navigation }) {
   );
 }
 
-function StatCard({ label, value, status }) {
-  const colors = STATUS_COLORS[status] || STATUS_COLORS.NEW;
+const createStyles = (theme) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: theme.background },
 
-  return (
-    <View style={[styles.statCard, { backgroundColor: colors.bg, borderColor: colors.border }]}>
-      <Text style={[styles.statValue, { color: colors.text }]}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#F8FAFC" },
-
-  headerSpacer: {
-    height: Platform.OS === "ios" ? 100 : 80,
-  },
-  headerContainer: { 
+  heroWrap: {
     paddingHorizontal: 16,
-    marginBottom: 16,
+    paddingTop: Platform.OS === "ios" ? 22 : 14,
+    marginBottom: 18,
   },
-  header: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
+  hero: {
+    borderRadius: 22,
     padding: 20,
-    marginBottom: 20,
-    shadowColor: "#0F172A",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
+    gap: 18,
+    shadowColor: "#0B1220",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.2,
+    shadowRadius: 18,
+    elevation: 6,
   },
-  headerTitle: {
-    color: "#0F172A",
-    fontSize: 20,
+  heroTopRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  heroCopy: {
+    flex: 1,
+    gap: 6,
+  },
+  themeToggle: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.16)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.28)",
+  },
+  themeToggleText: {
+    color: "#FFFFFF",
+    fontSize: 12,
     fontWeight: "700",
-    marginBottom: 16,
+    letterSpacing: 0.4,
+  },
+  heroEyebrow: {
+    color: "rgba(255,255,255,0.7)",
+    fontSize: 12,
+    letterSpacing: 1.8,
+    textTransform: "uppercase",
+    fontWeight: "700",
+  },
+  heroTitle: {
+    color: "#FFFFFF",
+    fontSize: 22,
+    fontWeight: "700",
     letterSpacing: -0.4,
+    fontFamily: TITLE_FONT,
+  },
+  heroSub: {
+    color: "rgba(255,255,255,0.72)",
+    fontSize: 13,
+    lineHeight: 18,
   },
   
   statsGrid: { 
@@ -238,6 +297,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 12,
     borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
+    backgroundColor: "rgba(255,255,255,0.12)",
   },
   statValue: {
     fontSize: 24,
@@ -246,17 +307,27 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   statLabel: {
-    color: "#64748B",
+    color: "rgba(255,255,255,0.75)",
     fontSize: 12,
     fontWeight: "500",
   },
 
+  sectionHeader: {
+    paddingHorizontal: 16,
+    marginBottom: 10,
+  },
   sectionTitle: {
-    color: "#0F172A",
+    color: theme.text,
     fontSize: 17,
     fontWeight: "600",
-    marginBottom: 12,
+    marginBottom: 4,
     letterSpacing: -0.3,
+    fontFamily: TITLE_FONT,
+  },
+  sectionCaption: {
+    color: theme.textMuted,
+    fontSize: 12,
+    fontWeight: "500",
   },
 
   card: {
@@ -265,23 +336,25 @@ const styles = StyleSheet.create({
     padding: 12,
     marginHorizontal: 16,
     marginBottom: 12,
-    borderRadius: 12,
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#0F172A",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
+    borderRadius: 16,
+    backgroundColor: theme.surface,
+    borderWidth: 1,
+    borderColor: theme.border,
+    shadowColor: "#0B1220",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 3,
   },
   cardPressed: {
-    opacity: 0.7,
-    transform: [{ scale: 0.98 }],
+    opacity: 0.85,
+    transform: [{ scale: 0.99 }],
   },
   thumb: {
     width: 80,
     height: 80,
-    borderRadius: 8,
-    backgroundColor: "#F1F5F9",
+    borderRadius: 12,
+    backgroundColor: theme.surfaceAlt,
   },
   cardContent: { 
     flex: 1,
@@ -293,13 +366,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   location: {
-    color: "#0F172A",
+    color: theme.text,
     fontWeight: "600",
     fontSize: 15,
     letterSpacing: -0.2,
+    fontFamily: TITLE_FONT,
   },
   room: {
-    color: "#64748B",
+    color: theme.textSoft,
     fontSize: 13,
     fontWeight: "500",
     marginTop: 2,
@@ -327,12 +401,12 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
   timeText: {
-    color: "#94A3B8",
+    color: theme.textMuted,
     fontSize: 11,
     fontWeight: "500",
   },
   summary: {
-    color: "#475569",
+    color: theme.textSoft,
     fontSize: 13,
     lineHeight: 18,
     marginTop: 6,
@@ -377,12 +451,12 @@ const styles = StyleSheet.create({
     top: 4,
   },
   emptyText: {
-    color: "#0F172A",
+    color: theme.text,
     fontSize: 18,
     fontWeight: "600",
   },
   emptySubtext: {
-    color: "#64748B",
+    color: theme.textMuted,
     fontSize: 14,
     marginTop: 4,
   },
@@ -394,10 +468,10 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: "#3B82F6",
+    backgroundColor: theme.accent,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#3B82F6",
+    shadowColor: theme.accent,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -420,7 +494,7 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   loadingText: {
-    color: "#64748B",
+    color: theme.textMuted,
     fontSize: 16,
     marginTop: 12,
   },

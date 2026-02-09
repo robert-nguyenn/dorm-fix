@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Platform, View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import { StatusBar } from "expo-status-bar";
-import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
+import { NavigationContainer, DefaultTheme, DarkTheme } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { LinearGradient } from "expo-linear-gradient";
 import { authAPI } from "./src/services/api";
+import { ThemeProvider, useTheme } from "./src/theme";
 
 import HomeScreen from "./src/screens/HomeScreen";
 import CreateTicketScreen from "./src/screens/CreateTicketScreen";
@@ -14,12 +15,12 @@ import SignUpScreen from "./src/screens/SignUpScreen";
 
 const Stack = createNativeStackNavigator();
 
-function HeaderBackground() {
+function HeaderBackground({ colors }) {
   return (
     <View style={StyleSheet.absoluteFill}>
       {/* Clean white to light blue gradient */}
       <LinearGradient
-        colors={["#FFFFFF", "#F8FAFC", "#EFF6FF"]}
+        colors={colors}
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}
         style={StyleSheet.absoluteFill}
@@ -31,38 +32,39 @@ function HeaderBackground() {
   );
 }
 
-function BrandTitle({ title }) {
+function BrandTitle({ title, color }) {
   return (
     <View style={styles.titleWrap}>
-      <Text style={styles.subtitle} numberOfLines={1}>
+      <Text style={[styles.subtitle, { color }]} numberOfLines={1}>
         {title}
       </Text>
     </View>
   );
 }
 
-const navTheme = {
-  ...DefaultTheme,
-  colors: {
-    ...DefaultTheme.colors,
-    background: "#F8FAFC",
-  },
-};
+function AppShell() {
+  const { theme, mode } = useTheme();
+  const baseTheme = mode === "dark" ? DarkTheme : DefaultTheme;
+  const navTheme = {
+    ...baseTheme,
+    colors: {
+      ...baseTheme.colors,
+      background: theme.background,
+    },
+  };
 
-export default function App() {
-  // Temporarily bypass authentication - go straight to Home
   return (
     <NavigationContainer theme={navTheme}>
-      <StatusBar style="dark" />
+      <StatusBar style={mode === "dark" ? "light" : "dark"} />
       <Stack.Navigator
         initialRouteName="Home"
         screenOptions={{
-          headerTintColor: "#0F172A",
+          headerTintColor: theme.text,
           headerTitleAlign: "left",
           headerShadowVisible: false,
           headerTransparent: true,
-          headerBackground: () => <HeaderBackground />,
-          headerTitle: ({ children }) => <BrandTitle title={children} />,
+          headerBackground: () => <HeaderBackground colors={theme.headerGradient} />,
+          headerTitle: ({ children }) => <BrandTitle title={children} color={theme.text} />,
           headerBackTitleVisible: false,
           
           headerStyle: {
@@ -77,7 +79,7 @@ export default function App() {
           },
           
           contentStyle: {
-            backgroundColor: "#F8FAFC",
+            backgroundColor: theme.background,
           },
           
           animation: "slide_from_right",
@@ -129,6 +131,14 @@ export default function App() {
         />
       </Stack.Navigator>
     </NavigationContainer>
+  );
+}
+
+export default function App() {
+  return (
+    <ThemeProvider>
+      <AppShell />
+    </ThemeProvider>
   );
 }
 

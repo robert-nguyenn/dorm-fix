@@ -7,9 +7,6 @@ const API_URL = Constants.expoConfig?.extra?.apiUrl || 'http://localhost:3000';
 const api = axios.create({
   baseURL: `${API_URL}/api`,
   timeout: 30000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
 });
 
 // Add auth token to requests
@@ -18,6 +15,13 @@ api.interceptors.request.use(
     const token = await AsyncStorage.getItem('authToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    // Let axios set multipart boundaries for FormData requests
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+      delete config.headers['content-type'];
+    } else if (!config.headers['Content-Type'] && !config.headers['content-type']) {
+      config.headers['Content-Type'] = 'application/json';
     }
     return config;
   },
@@ -77,11 +81,8 @@ export const authAPI = {
 export const ticketAPI = {
   // Create new ticket with image
   createTicket: async (formData) => {
-    const response = await api.post('/tickets', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    // Let axios set the multipart boundary automatically for React Native
+    const response = await api.post('/tickets', formData);
     return response.data;
   },
 
@@ -105,11 +106,8 @@ export const ticketAPI = {
 
   // Resolve ticket with after photo
   resolveTicket: async (id, formData) => {
-    const response = await api.patch(`/tickets/${id}/resolve`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    // Let axios set the multipart boundary automatically for React Native
+    const response = await api.patch(`/tickets/${id}/resolve`, formData);
     return response.data;
   },
 };

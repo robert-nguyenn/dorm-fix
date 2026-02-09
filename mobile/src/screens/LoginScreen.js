@@ -12,8 +12,13 @@ import {
   Alert,
 } from "react-native";
 import { authAPI } from "../services/api";
+import { useTheme } from "../theme";
+
+const TITLE_FONT = Platform.select({ ios: "Avenir Next", android: "sans-serif-condensed" });
 
 export default function LoginScreen({ navigation }) {
+  const { theme } = useTheme();
+  const styles = React.useMemo(() => createStyles(theme), [theme]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -105,10 +110,10 @@ export default function LoginScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme) => StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: theme.background,
   },
   container: {
     flex: 1,
@@ -130,32 +135,33 @@ const styles = StyleSheet.create({
   logoMark: {
     width: 64,
     height: 64,
-    borderRadius: 16,
-    backgroundColor: "#3B82F6",
+    borderRadius: 18,
+    backgroundColor: theme.accentStrong,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#3B82F6",
-    shadowOffset: { width: 0, height: 4 },
+    shadowColor: theme.accentStrong,
+    shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 4,
+    shadowRadius: 14,
+    elevation: 6,
   },
   logoInner: {
-    width: 32,
-    height: 32,
+    width: 28,
+    height: 28,
     borderRadius: 8,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: theme.accent,
   },
   title: {
     fontSize: 32,
     fontWeight: "700",
-    color: "#0F172A",
+    color: theme.text,
     letterSpacing: -0.5,
     marginBottom: 8,
+    fontFamily: TITLE_FONT,
   },
   subtitle: {
     fontSize: 15,
-    color: "#64748B",
+    color: theme.textSoft,
     fontWeight: "500",
   },
 
@@ -169,17 +175,17 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#475569",
+    color: theme.textSoft,
     marginBottom: 8,
   },
   input: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: theme.surface,
     borderWidth: 1.5,
-    borderColor: "#E2E8F0",
+    borderColor: theme.border,
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
-    color: "#0F172A",
+    color: theme.text,
   },
   forgotPassword: {
     alignSelf: "flex-end",
@@ -187,19 +193,19 @@ const styles = StyleSheet.create({
   },
   forgotText: {
     fontSize: 14,
-    color: "#3B82F6",
+    color: theme.accent,
     fontWeight: "600",
   },
   loginButton: {
-    backgroundColor: "#3B82F6",
+    backgroundColor: theme.accent,
     borderRadius: 12,
     padding: 18,
     alignItems: "center",
-    shadowColor: "#3B82F6",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowColor: theme.accent,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 5,
   },
   loginButtonPressed: {
     opacity: 0.8,
@@ -222,11 +228,11 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 14,
-    color: "#64748B",
+    color: theme.textMuted,
   },
   signupLink: {
     fontSize: 14,
-    color: "#3B82F6",
+    color: theme.accent,
     fontWeight: "600",
   },
 });
