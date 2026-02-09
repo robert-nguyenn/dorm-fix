@@ -20,7 +20,7 @@ export default function CreateTicketScreen({ navigation }) {
   const [building, setBuilding] = useState("");
   const [room, setRoom] = useState("");
   const [description, setDescription] = useState("");
-  const [images, setImages] = useState([]); // array of local URIs
+  const [images, setImages] = useState([]); // array of { uri, name, type }
   const [submitting, setSubmitting] = useState(false);
 
   const canSubmit = useMemo(() => {
@@ -47,8 +47,12 @@ export default function CreateTicketScreen({ navigation }) {
     });
 
     if (!result.canceled) {
-      const pickedUris = result.assets.map((a) => a.uri);
-      setImages((prev) => [...prev, ...pickedUris].slice(0, 3));
+      const picked = result.assets.map((a, idx) => ({
+        uri: a.uri,
+        name: a.fileName || `issue-${Date.now()}-${idx}.jpg`,
+        type: a.mimeType || "image/jpeg",
+      }));
+      setImages((prev) => [...prev, ...picked].slice(0, 3));
     }
   };
 
@@ -85,11 +89,11 @@ export default function CreateTicketScreen({ navigation }) {
         return;
       }
 
-      images.forEach((uri, i) => {
+      images.forEach((img, i) => {
         form.append("images", {
-          uri,
-          type: "image/jpeg",
-          name: `issue-${Date.now()}-${i}.jpg`,
+          uri: img.uri,
+          type: img.type || "image/jpeg",
+          name: img.name || `issue-${Date.now()}-${i}.jpg`,
         });
       });
 
@@ -201,9 +205,9 @@ export default function CreateTicketScreen({ navigation }) {
           </View>
 
           <View style={styles.imageGrid}>
-            {images.map((uri, idx) => (
-              <View key={uri + idx} style={styles.imageItem}>
-                <Image source={{ uri }} style={styles.image} />
+            {images.map((img, idx) => (
+              <View key={img.uri + idx} style={styles.imageItem}>
+                <Image source={{ uri: img.uri }} style={styles.image} />
                 <Pressable onPress={() => removeImage(idx)} style={styles.removeBtn}>
                   <Text style={styles.removeText}>×</Text>
                 </Pressable>
