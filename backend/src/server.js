@@ -16,6 +16,9 @@ import authRoutes from './routes/auth.js';
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Trust Render's proxy so rate limit can read X-Forwarded-For
+app.set('trust proxy', 1);
+
 // Security middleware
 app.use(helmet());
 app.use(cors({
