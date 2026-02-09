@@ -21,7 +21,10 @@ export const analyzeTicketWithGemini = async ({ imageUrl, building, room, userNo
       throw new Error('GEMINI_API_KEY is not set');
     }
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    // Use gemini-pro for v1 API compatibility (gemini-1.5-flash requires v1beta)
+    const modelName = process.env.GEMINI_MODEL || 'gemini-pro';
+    console.log(`Using Gemini model: ${modelName}`);
+    const model = genAI.getGenerativeModel({ model: modelName });
 
     const prompt = `You are an expert facilities maintenance ticket analyzer. Analyze this maintenance issue photo and provide a structured assessment.
 

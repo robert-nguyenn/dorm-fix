@@ -56,6 +56,9 @@ export const createTicket = async (req, res) => {
         userNote
       });
       
+      // Check if this is a fallback response
+      const isFallback = aiAnalysis.summary?.includes('Manual review needed');
+      
       // Update ticket with AI analysis
       ticket.category = aiAnalysis.category || 'Other';
       ticket.severity = aiAnalysis.severity || 'Low';
@@ -64,7 +67,12 @@ export const createTicket = async (req, res) => {
       ticket.followUpQuestions = aiAnalysis.followUpQuestions || [];
       ticket.safetyNotes = aiAnalysis.safetyNotes || [];
       
-      console.log('AI analysis complete');
+      if (isFallback) {
+        console.log('⚠️ Gemini AI fallback used');
+        aiDebug = { message: 'AI analysis failed, using fallback' };
+      } else {
+        console.log('✅ AI analysis complete');
+      }
     } catch (aiError) {
       const message = aiError?.message || String(aiError);
       console.error('Gemini AI error (proceeding with ticket):', message);
@@ -74,10 +82,17 @@ export const createTicket = async (req, res) => {
 
     await ticket.save();
 
-    res.status(201).json({
+    const response = {
       success: true,
       ticket
-    });
+    };
+    
+    // Include debug info if available
+    if (aiDebug) {
+      response.aiDebug = aiDebug;
+    }
+
+    res.status(201).json(response);
 
   } catch (error) {
     console.error('Error creating ticket:', error);
