@@ -14,6 +14,8 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { ticketAPI } from "../services/api";
 
+const TITLE_FONT = Platform.select({ ios: "Avenir Next", android: "sans-serif-condensed" });
+
 function timeAgo(iso) {
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60000);
@@ -36,9 +38,9 @@ const SEVERITY_COLORS = {
 };
 
 const STATUS_COLORS = {
-  NEW: { bg: "#EFF6FF", border: "#93C5FD", text: "#2563EB", dot: "#3B82F6" },
-  IN_PROGRESS: { bg: "#FEF3C7", border: "#FCD34D", text: "#D97706", dot: "#F59E0B" },
-  RESOLVED: { bg: "#F0FDF4", border: "#86EFAC", text: "#16A34A", dot: "#22C55E" },
+  NEW: { bg: "rgba(255,255,255,0.14)", border: "rgba(255,255,255,0.25)", text: "#FFFFFF", dot: "#7DD3FC" },
+  IN_PROGRESS: { bg: "rgba(255,255,255,0.14)", border: "rgba(255,255,255,0.25)", text: "#FFFFFF", dot: "#FBBF24" },
+  RESOLVED: { bg: "rgba(255,255,255,0.14)", border: "rgba(255,255,255,0.25)", text: "#FFFFFF", dot: "#34D399" },
 };
 
 export default function HomeScreen({ navigation }) {
@@ -127,7 +129,7 @@ export default function HomeScreen({ navigation }) {
     <SafeAreaView style={styles.safe}>
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#3B82F6" />
+          <ActivityIndicator size="large" color="#0EA5A4" />
           <Text style={styles.loadingText}>Loading tickets...</Text>
         </View>
       ) : (
@@ -135,44 +137,57 @@ export default function HomeScreen({ navigation }) {
           data={tickets}
           keyExtractor={(t) => t._id}
           renderItem={renderItem}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor="#3B82F6"
-          />
-        }
-        ListHeaderComponent={
-          <>
-            <View style={styles.headerSpacer} />
-            <View style={styles.headerContainer}>
-              <View style={styles.header}>
-                <Text style={styles.headerTitle}>Overview</Text>
-                
-                <View style={styles.statsGrid}>
-                  <StatCard label="New" value={counts.NEW} status="NEW" />
-                  <StatCard label="Active" value={counts.IN_PROGRESS} status="IN_PROGRESS" />
-                  <StatCard label="Resolved" value={counts.RESOLVED} status="RESOLVED" />
-                </View>
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor="#0EA5A4"
+            />
+          }
+          ListHeaderComponent={
+            <>
+              <View style={styles.heroWrap}>
+                <LinearGradient
+                  colors={["#0B1220", "#0F766E"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.hero}
+                >
+                  <View style={styles.heroCopy}>
+                    <Text style={styles.heroEyebrow}>DormFix</Text>
+                    <Text style={styles.heroTitle}>Maintenance Overview</Text>
+                    <Text style={styles.heroSub}>
+                      Live campus requests and service health at a glance.
+                    </Text>
+                  </View>
+
+                  <View style={styles.statsGrid}>
+                    <StatCard label="New" value={counts.NEW} status="NEW" />
+                    <StatCard label="Active" value={counts.IN_PROGRESS} status="IN_PROGRESS" />
+                    <StatCard label="Resolved" value={counts.RESOLVED} status="RESOLVED" />
+                  </View>
+                </LinearGradient>
               </View>
 
-              <Text style={styles.sectionTitle}>Recent Requests</Text>
-            </View>
-          </>
-        }
-        contentContainerStyle={{ paddingBottom: 120 }}
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <View style={styles.emptyIcon}>
-              <View style={styles.emptyCheckmark}>
-                <View style={styles.checkmarkLine1} />
-                <View style={styles.checkmarkLine2} />
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Recent Requests</Text>
+                <Text style={styles.sectionCaption}>Latest 100 submissions</Text>
               </View>
+            </>
+          }
+          contentContainerStyle={{ paddingBottom: 120, paddingTop: 6 }}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <View style={styles.emptyIcon}>
+                <View style={styles.emptyCheckmark}>
+                  <View style={styles.checkmarkLine1} />
+                  <View style={styles.checkmarkLine2} />
+                </View>
+              </View>
+              <Text style={styles.emptyText}>All caught up</Text>
+              <Text style={styles.emptySubtext}>No active requests at the moment</Text>
             </View>
-            <Text style={styles.emptyText}>All caught up</Text>
-            <Text style={styles.emptySubtext}>No active requests at the moment</Text>
-          </View>
-        }
+          }
         />
       )}
 
@@ -201,32 +216,44 @@ function StatCard({ label, value, status }) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#F8FAFC" },
+  safe: { flex: 1, backgroundColor: "#F5F7FB" },
 
-  headerSpacer: {
-    height: Platform.OS === "ios" ? 100 : 80,
-  },
-  headerContainer: { 
+  heroWrap: {
     paddingHorizontal: 16,
-    marginBottom: 16,
+    paddingTop: Platform.OS === "ios" ? 22 : 14,
+    marginBottom: 18,
   },
-  header: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
+  hero: {
+    borderRadius: 22,
     padding: 20,
-    marginBottom: 20,
-    shadowColor: "#0F172A",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
+    gap: 18,
+    shadowColor: "#0B1220",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.2,
+    shadowRadius: 18,
+    elevation: 6,
   },
-  headerTitle: {
-    color: "#0F172A",
-    fontSize: 20,
+  heroCopy: {
+    gap: 6,
+  },
+  heroEyebrow: {
+    color: "rgba(255,255,255,0.7)",
+    fontSize: 12,
+    letterSpacing: 1.8,
+    textTransform: "uppercase",
     fontWeight: "700",
-    marginBottom: 16,
+  },
+  heroTitle: {
+    color: "#FFFFFF",
+    fontSize: 22,
+    fontWeight: "700",
     letterSpacing: -0.4,
+    fontFamily: TITLE_FONT,
+  },
+  heroSub: {
+    color: "rgba(255,255,255,0.72)",
+    fontSize: 13,
+    lineHeight: 18,
   },
   
   statsGrid: { 
@@ -238,6 +265,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 12,
     borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
+    backgroundColor: "rgba(255,255,255,0.12)",
   },
   statValue: {
     fontSize: 24,
@@ -246,17 +275,27 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   statLabel: {
-    color: "#64748B",
+    color: "rgba(255,255,255,0.75)",
     fontSize: 12,
     fontWeight: "500",
   },
 
+  sectionHeader: {
+    paddingHorizontal: 16,
+    marginBottom: 10,
+  },
   sectionTitle: {
     color: "#0F172A",
     fontSize: 17,
     fontWeight: "600",
-    marginBottom: 12,
+    marginBottom: 4,
     letterSpacing: -0.3,
+    fontFamily: TITLE_FONT,
+  },
+  sectionCaption: {
+    color: "#7C8AA5",
+    fontSize: 12,
+    fontWeight: "500",
   },
 
   card: {
@@ -265,23 +304,25 @@ const styles = StyleSheet.create({
     padding: 12,
     marginHorizontal: 16,
     marginBottom: 12,
-    borderRadius: 12,
+    borderRadius: 16,
     backgroundColor: "#FFFFFF",
-    shadowColor: "#0F172A",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
+    borderWidth: 1,
+    borderColor: "#E7ECF5",
+    shadowColor: "#0B1220",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 3,
   },
   cardPressed: {
-    opacity: 0.7,
-    transform: [{ scale: 0.98 }],
+    opacity: 0.85,
+    transform: [{ scale: 0.99 }],
   },
   thumb: {
     width: 80,
     height: 80,
-    borderRadius: 8,
-    backgroundColor: "#F1F5F9",
+    borderRadius: 12,
+    backgroundColor: "#EEF2F7",
   },
   cardContent: { 
     flex: 1,
@@ -297,9 +338,10 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: 15,
     letterSpacing: -0.2,
+    fontFamily: TITLE_FONT,
   },
   room: {
-    color: "#64748B",
+    color: "#6B7A94",
     fontSize: 13,
     fontWeight: "500",
     marginTop: 2,
@@ -327,12 +369,12 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
   timeText: {
-    color: "#94A3B8",
+    color: "#8B98AF",
     fontSize: 11,
     fontWeight: "500",
   },
   summary: {
-    color: "#475569",
+    color: "#4A5A75",
     fontSize: 13,
     lineHeight: 18,
     marginTop: 6,
@@ -382,7 +424,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   emptySubtext: {
-    color: "#64748B",
+    color: "#7C8AA5",
     fontSize: 14,
     marginTop: 4,
   },
@@ -394,10 +436,10 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: "#3B82F6",
+    backgroundColor: "#0EA5A4",
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#3B82F6",
+    shadowColor: "#0EA5A4",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,

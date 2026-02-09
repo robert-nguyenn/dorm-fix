@@ -13,6 +13,7 @@ import {
 import { ticketAPI } from "../services/api";
 
 const { width } = Dimensions.get("window");
+const TITLE_FONT = Platform.select({ ios: "Avenir Next", android: "sans-serif-condensed" });
 
 const SEVERITY_COLORS = {
   High: { bg: "#FEF2F2", border: "#FCA5A5", text: "#DC2626" },
@@ -21,7 +22,7 @@ const SEVERITY_COLORS = {
 };
 
 const STATUS_INFO = {
-  NEW: { label: "New Request", color: "#2563EB", bg: "#EFF6FF" },
+  NEW: { label: "New Request", color: "#0EA5A4", bg: "#E6FFFB" },
   IN_PROGRESS: { label: "In Progress", color: "#D97706", bg: "#FEF3C7" },
   RESOLVED: { label: "Completed", color: "#16A34A", bg: "#F0FDF4" },
 };
@@ -60,7 +61,7 @@ export default function TicketDetailScreen({ route }) {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#3B82F6" />
+          <ActivityIndicator size="large" color="#0EA5A4" />
           <Text style={styles.loadingText}>Loading ticket...</Text>
         </View>
       </SafeAreaView>
@@ -204,17 +205,25 @@ function TimelineItem({ label, time, active }) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#F8FAFC" },
+  safe: { flex: 1, backgroundColor: "#F5F7FB" },
   scroll: { 
     paddingTop: Platform.OS === "ios" ? 100 : 80,
     paddingBottom: 40,
   },
   
   heroContainer: {
-    width: width,
+    width: width - 32,
     height: 240,
-    backgroundColor: "#E2E8F0",
+    backgroundColor: "#E6ECF5",
     marginBottom: 20,
+    marginHorizontal: 16,
+    borderRadius: 18,
+    overflow: "hidden",
+    shadowColor: "#0B1220",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 5,
   },
   heroImage: {
     width: "100%",
@@ -232,8 +241,10 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 8,
+    borderRadius: 999,
     alignSelf: "flex-start",
+    borderWidth: 1,
+    borderColor: "rgba(15, 23, 42, 0.08)",
   },
   statusDot: {
     width: 8,
@@ -252,6 +263,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "700",
     letterSpacing: -0.5,
+    fontFamily: TITLE_FONT,
   },
   room: {
     color: "#64748B",
@@ -265,10 +277,10 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   badge: {
-    backgroundColor: "#F1F5F9",
+    backgroundColor: "#F6FAFF",
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 6,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: "#E2E8F0",
   },
@@ -289,17 +301,18 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "600",
     marginBottom: 12,
+    fontFamily: TITLE_FONT,
   },
   
   summaryCard: {
-    backgroundColor: "#EFF6FF",
+    backgroundColor: "#E6FFFB",
     borderLeftWidth: 3,
-    borderLeftColor: "#3B82F6",
+    borderLeftColor: "#0EA5A4",
     padding: 14,
-    borderRadius: 8,
+    borderRadius: 10,
   },
   summaryText: {
-    color: "#1E40AF",
+    color: "#0F766E",
     fontSize: 14,
     lineHeight: 20,
   },
@@ -366,7 +379,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#CBD5E1",
   },
   timelineDotActive: {
-    backgroundColor: "#3B82F6",
+    backgroundColor: "#0EA5A4",
   },
   timelineContent: {
     flex: 1,

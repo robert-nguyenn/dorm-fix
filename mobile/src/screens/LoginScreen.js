@@ -13,6 +13,8 @@ import {
 } from "react-native";
 import { authAPI } from "../services/api";
 
+const TITLE_FONT = Platform.select({ ios: "Avenir Next", android: "sans-serif-condensed" });
+
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -108,7 +110,7 @@ export default function LoginScreen({ navigation }) {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "#F5F7FB",
   },
   container: {
     flex: 1,
@@ -130,21 +132,21 @@ const styles = StyleSheet.create({
   logoMark: {
     width: 64,
     height: 64,
-    borderRadius: 16,
-    backgroundColor: "#3B82F6",
+    borderRadius: 18,
+    backgroundColor: "#0B1220",
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#3B82F6",
-    shadowOffset: { width: 0, height: 4 },
+    shadowColor: "#0B1220",
+    shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 4,
+    shadowRadius: 14,
+    elevation: 6,
   },
   logoInner: {
-    width: 32,
-    height: 32,
+    width: 28,
+    height: 28,
     borderRadius: 8,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#0EA5A4",
   },
   title: {
     fontSize: 32,
@@ -152,6 +154,7 @@ const styles = StyleSheet.create({
     color: "#0F172A",
     letterSpacing: -0.5,
     marginBottom: 8,
+    fontFamily: TITLE_FONT,
   },
   subtitle: {
     fontSize: 15,
@@ -175,7 +178,7 @@ const styles = StyleSheet.create({
   input: {
     backgroundColor: "#FFFFFF",
     borderWidth: 1.5,
-    borderColor: "#E2E8F0",
+    borderColor: "#DCE4F2",
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
@@ -187,19 +190,19 @@ const styles = StyleSheet.create({
   },
   forgotText: {
     fontSize: 14,
-    color: "#3B82F6",
+    color: "#0EA5A4",
     fontWeight: "600",
   },
   loginButton: {
-    backgroundColor: "#3B82F6",
+    backgroundColor: "#0EA5A4",
     borderRadius: 12,
     padding: 18,
     alignItems: "center",
-    shadowColor: "#3B82F6",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowColor: "#0EA5A4",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 5,
   },
   loginButtonPressed: {
     opacity: 0.8,
@@ -226,7 +229,7 @@ const styles = StyleSheet.create({
   },
   signupLink: {
     fontSize: 14,
-    color: "#3B82F6",
+    color: "#0EA5A4",
     fontWeight: "600",
   },
 });

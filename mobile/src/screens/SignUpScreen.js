@@ -13,6 +13,8 @@ import {
 } from "react-native";
 import { authAPI } from "../services/api";
 
+const TITLE_FONT = Platform.select({ ios: "Avenir Next", android: "sans-serif-condensed" });
+
 export default function SignUpScreen({ navigation }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -188,7 +190,7 @@ export default function SignUpScreen({ navigation }) {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "#F5F7FB",
   },
   container: {
     flex: 1,
@@ -209,6 +211,7 @@ const styles = StyleSheet.create({
     color: "#0F172A",
     letterSpacing: -0.5,
     marginBottom: 8,
+    fontFamily: TITLE_FONT,
   },
   subtitle: {
     fontSize: 15,
@@ -233,23 +236,23 @@ const styles = StyleSheet.create({
   input: {
     backgroundColor: "#FFFFFF",
     borderWidth: 1.5,
-    borderColor: "#E2E8F0",
+    borderColor: "#DCE4F2",
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
     color: "#0F172A",
   },
   signupButton: {
-    backgroundColor: "#3B82F6",
+    backgroundColor: "#0EA5A4",
     borderRadius: 12,
     padding: 18,
     alignItems: "center",
     marginTop: 8,
-    shadowColor: "#3B82F6",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowColor: "#0EA5A4",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 5,
   },
   signupButtonPressed: {
     opacity: 0.8,
@@ -276,7 +279,7 @@ const styles = StyleSheet.create({
   },
   loginLink: {
     fontSize: 14,
-    color: "#3B82F6",
+    color: "#0EA5A4",
     fontWeight: "600",
   },
 });

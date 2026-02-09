@@ -14,6 +14,8 @@ import {
 import * as ImagePicker from "expo-image-picker";
 import { ticketAPI } from "../services/api";
 
+const TITLE_FONT = Platform.select({ ios: "Avenir Next", android: "sans-serif-condensed" });
+
 const BUILDINGS = ["Pearsons Hall", "Caws Hall", "Yates Hall", "Miller Hall"];
 
 export default function CreateTicketScreen({ navigation }) {
@@ -246,7 +248,7 @@ export default function CreateTicketScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#F8FAFC" },
+  safe: { flex: 1, backgroundColor: "#F5F7FB" },
   scroll: {
     paddingTop: Platform.OS === "ios" ? 110 : 90,
     paddingHorizontal: 16,
@@ -256,22 +258,24 @@ const styles = StyleSheet.create({
 
   heroCard: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 16,
-    shadowColor: "#0F172A",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: "#E7ECF5",
+    shadowColor: "#0B1220",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 4,
   },
   heroTop: { flexDirection: "row", gap: 12, alignItems: "center" },
   heroIconWrap: {
     width: 44,
     height: 44,
     borderRadius: 14,
-    backgroundColor: "#EFF6FF",
+    backgroundColor: "#E6FFFB",
     borderWidth: 1,
-    borderColor: "#BFDBFE",
+    borderColor: "#99F6E4",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -281,29 +285,38 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "700",
     letterSpacing: -0.3,
+    fontFamily: TITLE_FONT,
   },
-  heroSub: { color: "#64748B", marginTop: 2, fontSize: 13 },
+  heroSub: { color: "#5B6B86", marginTop: 2, fontSize: 13 },
 
   heroHintRow: { flexDirection: "row", gap: 10, marginTop: 12, flexWrap: "wrap" },
   hintPill: {
-    backgroundColor: "#F1F5F9",
+    backgroundColor: "#F0F7FF",
     borderRadius: 999,
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
-  hintText: { color: "#334155", fontSize: 12, fontWeight: "600" },
+  hintText: { color: "#1F3B66", fontSize: 12, fontWeight: "600" },
 
   card: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 16,
+    borderRadius: 18,
     padding: 16,
-    shadowColor: "#0F172A",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 1,
+    borderWidth: 1,
+    borderColor: "#E7ECF5",
+    shadowColor: "#0B1220",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 3,
   },
-  cardTitle: { color: "#0F172A", fontSize: 16, fontWeight: "700", letterSpacing: -0.2 },
+  cardTitle: {
+    color: "#0F172A",
+    fontSize: 16,
+    fontWeight: "700",
+    letterSpacing: -0.2,
+    fontFamily: TITLE_FONT,
+  },
   cardCaption: { color: "#64748B", fontSize: 13, marginTop: 4, marginBottom: 14 },
 
   label: {
@@ -320,21 +333,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderRadius: 12,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "#F6FAFF",
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: "#D7E3F4",
   },
   chipActive: {
-    backgroundColor: "#EFF6FF",
-    borderColor: "#93C5FD",
+    backgroundColor: "#E6FFFB",
+    borderColor: "#5EEAD4",
   },
   chipText: { color: "#334155", fontSize: 13, fontWeight: "600" },
-  chipTextActive: { color: "#1D4ED8" },
+  chipTextActive: { color: "#0F766E" },
 
   input: {
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "#FDFEFF",
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: "#DCE4F2",
     borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 12,
@@ -369,7 +382,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 10,
-    backgroundColor: "#0F172A",
+    backgroundColor: "#0B1220",
   },
   addBtnText: { color: "#FFFFFF", fontWeight: "700" },
 
@@ -389,7 +402,7 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: "rgba(15, 23, 42, 0.85)",
+    backgroundColor: "rgba(11, 18, 32, 0.85)",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -399,7 +412,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     borderColor: "#E2E8F0",
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "#F6FAFF",
     padding: 14,
     alignItems: "center",
   },
@@ -422,12 +435,12 @@ const styles = StyleSheet.create({
     marginTop: 6,
     height: 54,
     borderRadius: 16,
-    backgroundColor: "#2563EB",
+    backgroundColor: "#0EA5A4",
     alignItems: "center",
     justifyContent: "center",
     flexDirection: "row",
     gap: 10,
-    shadowColor: "#2563EB",
+    shadowColor: "#0EA5A4",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.22,
     shadowRadius: 14,
@@ -435,7 +448,7 @@ const styles = StyleSheet.create({
   },
   submitDisabled: { opacity: 0.5 },
   submitPressed: { transform: [{ scale: 0.99 }] },
-  submitText: { color: "#FFFFFF", fontSize: 16, fontWeight: "900" },
+  submitText: { color: "#FFFFFF", fontSize: 16, fontWeight: "900", fontFamily: TITLE_FONT },
   submitArrow: { color: "#FFFFFF", fontSize: 18, fontWeight: "300" },
 
   footerNote: {
