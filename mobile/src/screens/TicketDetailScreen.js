@@ -9,6 +9,8 @@ import {
   Dimensions,
   Platform,
   ActivityIndicator,
+  Alert,
+  Pressable,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { ticketAPI } from "../services/api";
@@ -39,7 +41,7 @@ function timeAgo(iso) {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
-export default function TicketDetailScreen({ route }) {
+export default function TicketDetailScreen({ route, navigation }) {
   const { theme } = useTheme();
   const styles = React.useMemo(() => createStyles(theme), [theme]);
   const { id } = route.params;
@@ -77,6 +79,29 @@ export default function TicketDetailScreen({ route }) {
 
     fetchTicket();
   }, [id]);
+
+  const handleDelete = () => {
+    Alert.alert(
+      "Delete ticket?",
+      "This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await ticketAPI.deleteTicket(id);
+              navigation.goBack();
+            } catch (error) {
+              console.error("Error deleting ticket:", error);
+              Alert.alert("Error", "Failed to delete the ticket. Please try again.");
+            }
+          },
+        },
+      ]
+    );
+  };
 
   if (loading) {
     return (
@@ -212,6 +237,12 @@ export default function TicketDetailScreen({ route }) {
                 />
               )}
             </View>
+          </View>
+
+          <View style={styles.deleteWrap}>
+            <Pressable onPress={handleDelete} style={styles.deleteButton}>
+              <Text style={styles.deleteButtonText}>Delete ticket</Text>
+            </Pressable>
           </View>
         </View>
       </ScrollView>
@@ -451,5 +482,24 @@ const createStyles = (theme) => StyleSheet.create({
     color: "#DC2626",
     fontSize: 16,
     fontWeight: "600",
+  },
+
+  deleteWrap: {
+    marginTop: 8,
+    marginBottom: 20,
+  },
+  deleteButton: {
+    borderWidth: 1,
+    borderColor: theme.mode === "dark" ? "rgba(248, 113, 113, 0.45)" : "rgba(239, 68, 68, 0.35)",
+    backgroundColor: theme.mode === "dark" ? "rgba(248, 113, 113, 0.15)" : "rgba(239, 68, 68, 0.08)",
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  deleteButtonText: {
+    color: theme.mode === "dark" ? "#FCA5A5" : "#EF4444",
+    fontSize: 14,
+    fontWeight: "700",
+    letterSpacing: 0.2,
   },
 });

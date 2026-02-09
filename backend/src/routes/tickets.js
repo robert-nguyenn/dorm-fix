@@ -1,6 +1,6 @@
 import express from 'express';
 import multer from 'multer';
-import { createTicket, getTickets, getTicketById, updateTicketStatus } from '../controllers/ticketController.js';
+import { createTicket, getTickets, getTicketById, updateTicketStatus, deleteTicket } from '../controllers/ticketController.js';
 
 const router = express.Router();
 
@@ -27,6 +27,9 @@ router.get('/', getTickets);
 
 // GET /api/tickets/:id - Get specific ticket
 router.get('/:id', getTicketById);
+
+// DELETE /api/tickets/:id - Delete ticket
+router.delete('/:id', deleteTicket);
 
 // PATCH /api/tickets/:id/status - Update ticket status
 router.patch('/:id/status', updateTicketStatus);
