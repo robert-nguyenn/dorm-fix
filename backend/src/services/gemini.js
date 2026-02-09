@@ -21,7 +21,8 @@ export const analyzeTicketWithGemini = async ({ imageUrl, building, room, userNo
       throw new Error('GEMINI_API_KEY is not set');
     }
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const modelName = process.env.GEMINI_MODEL || 'gemini-1.5-flash-latest';
+    const model = genAI.getGenerativeModel({ model: modelName });
 
     const prompt = `You are an expert facilities maintenance ticket analyzer. Analyze this maintenance issue photo and provide a structured assessment.
 
@@ -92,7 +93,9 @@ Respond ONLY with valid JSON, no additional text.`;
       summary: 'Maintenance issue reported. Manual review needed.',
       facilitiesDescription: `Maintenance issue reported in ${building}, Room ${room}. ${userNote || 'No additional details provided.'}`,
       followUpQuestions: ['Can you provide more details about the issue?'],
-      safetyNotes: []
+      safetyNotes: [],
+      _fallback: true,
+      _error: error?.message || String(error)
     };
   }
 };
