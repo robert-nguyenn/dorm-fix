@@ -5,6 +5,8 @@ import { analyzeTicketWithGemini } from '../services/gemini.js';
 export const createTicket = async (req, res) => {
   try {
     const { building, room, locationNotes, userNote, reporterName } = req.body;
+    const debugEnabled = req.headers['x-debug'] === '1';
+    let aiDebug = null;
     
     // Validate required fields
     if (!building || !room) {
@@ -45,7 +47,7 @@ export const createTicket = async (req, res) => {
     });
 
     // Analyze with Gemini AI (async, don't block)
-    console.log('Analyzing ticket with Gemini AI...');
+    console.log(''Analyzing ticket with Gemini AI...'');
     try {
       const aiAnalysis = await analyzeTicketWithGemini({
         imageUrl: imageUrls[0],
@@ -55,16 +57,18 @@ export const createTicket = async (req, res) => {
       });
       
       // Update ticket with AI analysis
-      ticket.category = aiAnalysis.category || 'Other';
-      ticket.severity = aiAnalysis.severity || 'Low';
+      ticket.category = aiAnalysis.category || ''Other'';
+      ticket.severity = aiAnalysis.severity || ''Low'';
       ticket.aiSummary = aiAnalysis.summary;
       ticket.facilitiesDescription = aiAnalysis.facilitiesDescription;
       ticket.followUpQuestions = aiAnalysis.followUpQuestions || [];
       ticket.safetyNotes = aiAnalysis.safetyNotes || [];
       
-      console.log('✅ AI analysis complete');
+      console.log(''AI analysis complete'');
     } catch (aiError) {
-      console.error('⚠️ Gemini AI error (proceeding with ticket):', aiError.message);
+      const message = aiError?.message || String(aiError);
+      console.error(''Gemini AI error (proceeding with ticket):'', message);
+      aiDebug = { message };
       // Continue with ticket creation even if AI fails
     }
 
@@ -179,3 +183,29 @@ export const updateTicketStatus = async (req, res) => {
     });
   }
 };
+
+export const deleteTicket = async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+
+    if (!ticket) {
+      return res.status(404).json({
+        error: { message: 'Ticket not found' }
+      });
+    }
+
+    await ticket.deleteOne();
+
+    res.json({
+      success: true,
+      message: 'Ticket deleted'
+    });
+  } catch (error) {
+    console.error('Error deleting ticket:', error);
+    res.status(500).json({
+      error: { message: 'Failed to delete ticket' }
+    });
+  }
+};
+
+

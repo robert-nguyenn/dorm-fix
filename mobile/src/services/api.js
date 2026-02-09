@@ -82,7 +82,9 @@ export const ticketAPI = {
   // Create new ticket with image
   createTicket: async (formData) => {
     // Let axios set the multipart boundary automatically for React Native
-    const response = await api.post('/tickets', formData);
+    const response = await api.post('/tickets', formData, {
+      headers: { 'x-debug': '1' }
+    });
     return response.data;
   },
 
@@ -101,6 +103,12 @@ export const ticketAPI = {
   // Update ticket status
   updateStatus: async (id, status, note) => {
     const response = await api.patch(`/tickets/${id}/status`, { status, note });
+    return response.data;
+  },
+
+  // Delete ticket
+  deleteTicket: async (id) => {
+    const response = await api.delete(`/tickets/${id}`);
     return response.data;
   },
 

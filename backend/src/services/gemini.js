@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import fetch from 'node-fetch';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -16,6 +17,10 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
  */
 export const analyzeTicketWithGemini = async ({ imageUrl, building, room, userNote }) => {
   try {
+    if (!process.env.GEMINI_API_KEY) {
+      throw new Error('GEMINI_API_KEY is not set');
+    }
+
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
     const prompt = `You are an expert facilities maintenance ticket analyzer. Analyze this maintenance issue photo and provide a structured assessment.
@@ -44,14 +49,18 @@ Respond ONLY with valid JSON, no additional text.`;
 
     // Fetch image and convert to base64
     const imageResponse = await fetch(imageUrl);
+    if (!imageResponse.ok) {
+      throw new Error(`Failed to fetch image: ${imageResponse.status}`);
+    }
     const arrayBuffer = await imageResponse.arrayBuffer();
     const base64Image = Buffer.from(arrayBuffer).toString('base64');
+    const mimeType = imageResponse.headers.get('content-type') || 'image/jpeg';
 
     const result = await model.generateContent([
       prompt,
       {
         inlineData: {
-          mimeType: 'image/jpeg',
+          mimeType,
           data: base64Image
         }
       }
@@ -75,7 +84,7 @@ Respond ONLY with valid JSON, no additional text.`;
     return analysis;
 
   } catch (error) {
-    console.error('Gemini AI error:', error);
+    console.error('Gemini AI error:', error?.message || error);
     // Return fallback analysis
     return {
       category: 'Other',

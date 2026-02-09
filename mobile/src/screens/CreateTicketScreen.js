@@ -104,6 +104,9 @@ export default function CreateTicketScreen({ navigation }) {
 
       // Call backend API
       const response = await ticketAPI.createTicket(form);
+      if (response.aiDebug) {
+        console.log("AI debug:", response.aiDebug);
+      }
       console.log("Ticket created:", response.ticket._id);
 
       Alert.alert("Submitted", "Your request has been created successfully!", [
