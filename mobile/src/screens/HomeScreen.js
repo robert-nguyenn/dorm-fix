@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { ticketAPI } from "../services/api";
+import { useTheme } from "../theme";
 
 const TITLE_FONT = Platform.select({ ios: "Avenir Next", android: "sans-serif-condensed" });
 
@@ -44,6 +45,8 @@ const STATUS_COLORS = {
 };
 
 export default function HomeScreen({ navigation }) {
+  const { theme, mode, toggleTheme } = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const [tickets, setTickets] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -125,11 +128,22 @@ export default function HomeScreen({ navigation }) {
     );
   };
 
+  const StatCard = ({ label, value, status }) => {
+    const colors = STATUS_COLORS[status] || STATUS_COLORS.NEW;
+
+    return (
+      <View style={[styles.statCard, { backgroundColor: colors.bg, borderColor: colors.border }]}>
+        <Text style={[styles.statValue, { color: colors.text }]}>{value}</Text>
+        <Text style={styles.statLabel}>{label}</Text>
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.safe}>
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#0EA5A4" />
+          <ActivityIndicator size="large" color={theme.accent} />
           <Text style={styles.loadingText}>Loading tickets...</Text>
         </View>
       ) : (
@@ -148,26 +162,34 @@ export default function HomeScreen({ navigation }) {
             <>
               <View style={styles.heroWrap}>
                 <LinearGradient
-                  colors={["#0B1220", "#0F766E"]}
+                  colors={theme.heroGradient}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                   style={styles.hero}
                 >
-                  <View style={styles.heroCopy}>
-                    <Text style={styles.heroEyebrow}>DormFix</Text>
-                    <Text style={styles.heroTitle}>Maintenance Overview</Text>
-                    <Text style={styles.heroSub}>
-                      Live campus requests and service health at a glance.
-                    </Text>
+                  <View style={styles.heroTopRow}>
+                    <View style={styles.heroCopy}>
+                      <Text style={styles.heroEyebrow}>DormFix</Text>
+                      <Text style={styles.heroTitle}>Maintenance Overview</Text>
+                      <Text style={styles.heroSub}>
+                        Live campus requests and service health at a glance.
+                      </Text>
+                    </View>
+
+                    <Pressable onPress={toggleTheme} style={styles.themeToggle}>
+                      <Text style={styles.themeToggleText}>
+                        {mode === "dark" ? "Dark" : "Light"}
+                      </Text>
+                    </Pressable>
                   </View>
 
-                  <View style={styles.statsGrid}>
-                    <StatCard label="New" value={counts.NEW} status="NEW" />
-                    <StatCard label="Active" value={counts.IN_PROGRESS} status="IN_PROGRESS" />
-                    <StatCard label="Resolved" value={counts.RESOLVED} status="RESOLVED" />
-                  </View>
-                </LinearGradient>
-              </View>
+                <View style={styles.statsGrid}>
+                  <StatCard label="New" value={counts.NEW} status="NEW" />
+                  <StatCard label="Active" value={counts.IN_PROGRESS} status="IN_PROGRESS" />
+                  <StatCard label="Resolved" value={counts.RESOLVED} status="RESOLVED" />
+                </View>
+              </LinearGradient>
+            </View>
 
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Recent Requests</Text>
@@ -204,19 +226,8 @@ export default function HomeScreen({ navigation }) {
   );
 }
 
-function StatCard({ label, value, status }) {
-  const colors = STATUS_COLORS[status] || STATUS_COLORS.NEW;
-
-  return (
-    <View style={[styles.statCard, { backgroundColor: colors.bg, borderColor: colors.border }]}>
-      <Text style={[styles.statValue, { color: colors.text }]}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#F5F7FB" },
+const createStyles = (theme) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: theme.background },
 
   heroWrap: {
     paddingHorizontal: 16,
@@ -233,8 +244,29 @@ const styles = StyleSheet.create({
     shadowRadius: 18,
     elevation: 6,
   },
+  heroTopRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 12,
+  },
   heroCopy: {
+    flex: 1,
     gap: 6,
+  },
+  themeToggle: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.16)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.28)",
+  },
+  themeToggleText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 0.4,
   },
   heroEyebrow: {
     color: "rgba(255,255,255,0.7)",
@@ -285,7 +317,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   sectionTitle: {
-    color: "#0F172A",
+    color: theme.text,
     fontSize: 17,
     fontWeight: "600",
     marginBottom: 4,
@@ -293,7 +325,7 @@ const styles = StyleSheet.create({
     fontFamily: TITLE_FONT,
   },
   sectionCaption: {
-    color: "#7C8AA5",
+    color: theme.textMuted,
     fontSize: 12,
     fontWeight: "500",
   },
@@ -305,9 +337,9 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginBottom: 12,
     borderRadius: 16,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: theme.surface,
     borderWidth: 1,
-    borderColor: "#E7ECF5",
+    borderColor: theme.border,
     shadowColor: "#0B1220",
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.08,
@@ -322,7 +354,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 12,
-    backgroundColor: "#EEF2F7",
+    backgroundColor: theme.surfaceAlt,
   },
   cardContent: { 
     flex: 1,
@@ -334,14 +366,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   location: {
-    color: "#0F172A",
+    color: theme.text,
     fontWeight: "600",
     fontSize: 15,
     letterSpacing: -0.2,
     fontFamily: TITLE_FONT,
   },
   room: {
-    color: "#6B7A94",
+    color: theme.textSoft,
     fontSize: 13,
     fontWeight: "500",
     marginTop: 2,
@@ -369,12 +401,12 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
   timeText: {
-    color: "#8B98AF",
+    color: theme.textMuted,
     fontSize: 11,
     fontWeight: "500",
   },
   summary: {
-    color: "#4A5A75",
+    color: theme.textSoft,
     fontSize: 13,
     lineHeight: 18,
     marginTop: 6,
@@ -419,12 +451,12 @@ const styles = StyleSheet.create({
     top: 4,
   },
   emptyText: {
-    color: "#0F172A",
+    color: theme.text,
     fontSize: 18,
     fontWeight: "600",
   },
   emptySubtext: {
-    color: "#7C8AA5",
+    color: theme.textMuted,
     fontSize: 14,
     marginTop: 4,
   },
@@ -436,10 +468,10 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: "#0EA5A4",
+    backgroundColor: theme.accent,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#0EA5A4",
+    shadowColor: theme.accent,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -462,7 +494,7 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   loadingText: {
-    color: "#64748B",
+    color: theme.textMuted,
     fontSize: 16,
     marginTop: 12,
   },

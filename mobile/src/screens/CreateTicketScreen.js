@@ -13,12 +13,15 @@ import {
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { ticketAPI } from "../services/api";
+import { useTheme } from "../theme";
 
 const TITLE_FONT = Platform.select({ ios: "Avenir Next", android: "sans-serif-condensed" });
 
 const BUILDINGS = ["Pearsons Hall", "Caws Hall", "Yates Hall", "Miller Hall"];
 
 export default function CreateTicketScreen({ navigation }) {
+  const { theme } = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const [building, setBuilding] = useState("");
   const [room, setRoom] = useState("");
   const [description, setDescription] = useState("");
@@ -247,8 +250,8 @@ export default function CreateTicketScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#F5F7FB" },
+const createStyles = (theme) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: theme.background },
   scroll: {
     paddingTop: Platform.OS === "ios" ? 110 : 90,
     paddingHorizontal: 16,
@@ -257,11 +260,11 @@ const styles = StyleSheet.create({
   },
 
   heroCard: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: theme.surface,
     borderRadius: 20,
     padding: 16,
     borderWidth: 1,
-    borderColor: "#E7ECF5",
+    borderColor: theme.border,
     shadowColor: "#0B1220",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.08,
@@ -287,23 +290,23 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
     fontFamily: TITLE_FONT,
   },
-  heroSub: { color: "#5B6B86", marginTop: 2, fontSize: 13 },
+  heroSub: { color: theme.textSoft, marginTop: 2, fontSize: 13 },
 
   heroHintRow: { flexDirection: "row", gap: 10, marginTop: 12, flexWrap: "wrap" },
   hintPill: {
-    backgroundColor: "#F0F7FF",
+    backgroundColor: theme.surfaceAlt,
     borderRadius: 999,
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
-  hintText: { color: "#1F3B66", fontSize: 12, fontWeight: "600" },
+  hintText: { color: theme.text, fontSize: 12, fontWeight: "600" },
 
   card: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: theme.surface,
     borderRadius: 18,
     padding: 16,
     borderWidth: 1,
-    borderColor: "#E7ECF5",
+    borderColor: theme.border,
     shadowColor: "#0B1220",
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.06,
@@ -311,16 +314,16 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   cardTitle: {
-    color: "#0F172A",
+    color: theme.text,
     fontSize: 16,
     fontWeight: "700",
     letterSpacing: -0.2,
     fontFamily: TITLE_FONT,
   },
-  cardCaption: { color: "#64748B", fontSize: 13, marginTop: 4, marginBottom: 14 },
+  cardCaption: { color: theme.textMuted, fontSize: 13, marginTop: 4, marginBottom: 14 },
 
   label: {
-    color: "#64748B",
+    color: theme.textMuted,
     fontSize: 12,
     fontWeight: "700",
     letterSpacing: 1.4,
@@ -333,25 +336,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderRadius: 12,
-    backgroundColor: "#F6FAFF",
+    backgroundColor: theme.surfaceAlt,
     borderWidth: 1,
-    borderColor: "#D7E3F4",
+    borderColor: theme.border,
   },
   chipActive: {
-    backgroundColor: "#E6FFFB",
-    borderColor: "#5EEAD4",
+    backgroundColor: "rgba(14, 165, 164, 0.16)",
+    borderColor: theme.accent,
   },
-  chipText: { color: "#334155", fontSize: 13, fontWeight: "600" },
-  chipTextActive: { color: "#0F766E" },
+  chipText: { color: theme.text, fontSize: 13, fontWeight: "600" },
+  chipTextActive: { color: theme.accent },
 
   input: {
-    backgroundColor: "#FDFEFF",
+    backgroundColor: theme.surface,
     borderWidth: 1,
-    borderColor: "#DCE4F2",
+    borderColor: theme.border,
     borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 12,
-    color: "#0F172A",
+    color: theme.text,
     fontSize: 15,
     marginBottom: 4,
   },
@@ -382,7 +385,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 10,
-    backgroundColor: "#0B1220",
+    backgroundColor: theme.accentStrong,
   },
   addBtnText: { color: "#FFFFFF", fontWeight: "700" },
 
@@ -392,7 +395,7 @@ const styles = StyleSheet.create({
     height: 190,
     borderRadius: 14,
     overflow: "hidden",
-    backgroundColor: "#F1F5F9",
+    backgroundColor: theme.surfaceAlt,
   },
   image: { width: "100%", height: "100%" },
   removeBtn: {
@@ -411,13 +414,13 @@ const styles = StyleSheet.create({
   photoEmpty: {
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
-    backgroundColor: "#F6FAFF",
+    borderColor: theme.border,
+    backgroundColor: theme.surfaceAlt,
     padding: 14,
     alignItems: "center",
   },
   photoEmptyIcon: { fontSize: 22 },
-  photoEmptyText: { marginTop: 6, color: "#475569", fontWeight: "600" },
+  photoEmptyText: { marginTop: 6, color: theme.textSoft, fontWeight: "600" },
 
   previewPill: {
     marginTop: 12,
@@ -435,12 +438,12 @@ const styles = StyleSheet.create({
     marginTop: 6,
     height: 54,
     borderRadius: 16,
-    backgroundColor: "#0EA5A4",
+    backgroundColor: theme.accent,
     alignItems: "center",
     justifyContent: "center",
     flexDirection: "row",
     gap: 10,
-    shadowColor: "#0EA5A4",
+    shadowColor: theme.accent,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.22,
     shadowRadius: 14,
@@ -453,7 +456,7 @@ const styles = StyleSheet.create({
 
   footerNote: {
     textAlign: "center",
-    color: "#94A3B8",
+    color: theme.textMuted,
     fontSize: 12,
     marginTop: 6,
     paddingHorizontal: 8,

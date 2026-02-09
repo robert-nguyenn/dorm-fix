@@ -10,7 +10,9 @@ import {
   Platform,
   ActivityIndicator,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { ticketAPI } from "../services/api";
+import { useTheme } from "../theme";
 
 const { width } = Dimensions.get("window");
 const TITLE_FONT = Platform.select({ ios: "Avenir Next", android: "sans-serif-condensed" });
@@ -38,9 +40,28 @@ function timeAgo(iso) {
 }
 
 export default function TicketDetailScreen({ route }) {
+  const { theme } = useTheme();
+  const styles = React.useMemo(() => createStyles(theme), [theme]);
   const { id } = route.params;
   const [ticket, setTicket] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const TimelineItem = ({ label, time, active }) => {
+    return (
+      <View style={styles.timelineItem}>
+        <View style={styles.timelineDot}>
+          <View style={[
+            styles.timelineDotInner,
+            active && styles.timelineDotActive
+          ]} />
+        </View>
+        <View style={styles.timelineContent}>
+          <Text style={styles.timelineLabel}>{label}</Text>
+          <Text style={styles.timelineTime}>{time}</Text>
+        </View>
+      </View>
+    );
+  };
 
   useEffect(() => {
     const fetchTicket = async () => {
@@ -61,7 +82,7 @@ export default function TicketDetailScreen({ route }) {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#0EA5A4" />
+          <ActivityIndicator size="large" color={theme.accent} />
           <Text style={styles.loadingText}>Loading ticket...</Text>
         </View>
       </SafeAreaView>
@@ -122,10 +143,21 @@ export default function TicketDetailScreen({ route }) {
           <View style={styles.divider} />
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>AI Summary</Text>
-            <View style={styles.summaryCard}>
-              <Text style={styles.summaryText}>{ticket.aiSummary}</Text>
+            <View style={styles.aiHeader}>
+              <Text style={styles.sectionTitle}>Gemini AI Summary</Text>
+              <View style={styles.aiBadge}>
+                <Text style={styles.aiBadgeText}>AI</Text>
+              </View>
             </View>
+            <LinearGradient
+              colors={[theme.surfaceAlt, "rgba(14, 165, 164, 0.12)"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.aiCard}
+            >
+              <Text style={styles.aiSubtitle}>Auto‑triaged insight</Text>
+              <Text style={styles.aiSummaryText}>{ticket.aiSummary}</Text>
+            </LinearGradient>
           </View>
 
           {ticket.userNote && (
@@ -187,25 +219,8 @@ export default function TicketDetailScreen({ route }) {
   );
 }
 
-function TimelineItem({ label, time, active }) {
-  return (
-    <View style={styles.timelineItem}>
-      <View style={styles.timelineDot}>
-        <View style={[
-          styles.timelineDotInner,
-          active && styles.timelineDotActive
-        ]} />
-      </View>
-      <View style={styles.timelineContent}>
-        <Text style={styles.timelineLabel}>{label}</Text>
-        <Text style={styles.timelineTime}>{time}</Text>
-      </View>
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#F5F7FB" },
+const createStyles = (theme) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: theme.background },
   scroll: { 
     paddingTop: Platform.OS === "ios" ? 100 : 80,
     paddingBottom: 40,
@@ -214,7 +229,7 @@ const styles = StyleSheet.create({
   heroContainer: {
     width: width - 32,
     height: 240,
-    backgroundColor: "#E6ECF5",
+    backgroundColor: theme.surfaceAlt,
     marginBottom: 20,
     marginHorizontal: 16,
     borderRadius: 18,
@@ -244,7 +259,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     alignSelf: "flex-start",
     borderWidth: 1,
-    borderColor: "rgba(15, 23, 42, 0.08)",
+    borderColor: theme.border,
   },
   statusDot: {
     width: 8,
@@ -259,14 +274,14 @@ const styles = StyleSheet.create({
   section: { marginBottom: 24 },
   
   location: {
-    color: "#0F172A",
+    color: theme.text,
     fontSize: 24,
     fontWeight: "700",
     letterSpacing: -0.5,
     fontFamily: TITLE_FONT,
   },
   room: {
-    color: "#64748B",
+    color: theme.textSoft,
     fontSize: 16,
     fontWeight: "500",
     marginTop: 4,
@@ -277,48 +292,74 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   badge: {
-    backgroundColor: "#F6FAFF",
+    backgroundColor: theme.surfaceAlt,
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: theme.border,
   },
   badgeText: {
-    color: "#475569",
+    color: theme.textSoft,
     fontSize: 12,
     fontWeight: "600",
   },
   
   divider: {
     height: 1,
-    backgroundColor: "#E2E8F0",
+    backgroundColor: theme.border,
     marginVertical: 20,
   },
   
   sectionTitle: {
-    color: "#0F172A",
+    color: theme.text,
     fontSize: 15,
     fontWeight: "600",
     marginBottom: 12,
     fontFamily: TITLE_FONT,
   },
   
-  summaryCard: {
-    backgroundColor: "#E6FFFB",
-    borderLeftWidth: 3,
-    borderLeftColor: "#0EA5A4",
-    padding: 14,
-    borderRadius: 10,
+  aiHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 10,
   },
-  summaryText: {
-    color: "#0F766E",
-    fontSize: 14,
-    lineHeight: 20,
+  aiBadge: {
+    backgroundColor: theme.accent,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+  },
+  aiBadgeText: {
+    color: "#FFFFFF",
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.6,
+  },
+  aiCard: {
+    padding: 16,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: theme.border,
+  },
+  aiSubtitle: {
+    color: theme.textMuted,
+    fontSize: 12,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 1.2,
+    marginBottom: 8,
+  },
+  aiSummaryText: {
+    color: theme.text,
+    fontSize: 15,
+    lineHeight: 22,
+    fontWeight: "600",
   },
   
   descriptionText: {
-    color: "#475569",
+    color: theme.textSoft,
     fontSize: 14,
     lineHeight: 22,
   },
@@ -327,32 +368,32 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: theme.surface,
     padding: 14,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: theme.border,
   },
   assignmentIcon: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#EFF6FF",
+    backgroundColor: theme.surfaceAlt,
     alignItems: "center",
     justifyContent: "center",
   },
   assignmentInitial: {
-    color: "#3B82F6",
+    color: theme.accent,
     fontSize: 16,
     fontWeight: "700",
   },
   assignmentName: {
-    color: "#0F172A",
+    color: theme.text,
     fontSize: 15,
     fontWeight: "600",
   },
   assignmentMeta: {
-    color: "#64748B",
+    color: theme.textMuted,
     fontSize: 12,
     marginTop: 2,
   },
@@ -368,7 +409,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: "#F1F5F9",
+    backgroundColor: theme.surfaceAlt,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -376,21 +417,21 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: "#CBD5E1",
+    backgroundColor: theme.textMuted,
   },
   timelineDotActive: {
-    backgroundColor: "#0EA5A4",
+    backgroundColor: theme.accent,
   },
   timelineContent: {
     flex: 1,
   },
   timelineLabel: {
-    color: "#0F172A",
+    color: theme.text,
     fontSize: 14,
     fontWeight: "600",
   },
   timelineTime: {
-    color: "#64748B",
+    color: theme.textMuted,
     fontSize: 12,
     marginTop: 2,
   },
@@ -403,7 +444,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: 12,
-    color: "#64748B",
+    color: theme.textMuted,
     fontSize: 14,
   },
   errorText: {
