@@ -47,7 +47,7 @@ export const createTicket = async (req, res) => {
     });
 
     // Analyze with Gemini AI (async, don't block)
-    console.log(''Analyzing ticket with Gemini AI...'');
+    console.log('Analyzing ticket with Gemini AI...');
     try {
       const aiAnalysis = await analyzeTicketWithGemini({
         imageUrl: imageUrls[0],
@@ -57,17 +57,17 @@ export const createTicket = async (req, res) => {
       });
       
       // Update ticket with AI analysis
-      ticket.category = aiAnalysis.category || ''Other'';
-      ticket.severity = aiAnalysis.severity || ''Low'';
+      ticket.category = aiAnalysis.category || 'Other';
+      ticket.severity = aiAnalysis.severity || 'Low';
       ticket.aiSummary = aiAnalysis.summary;
       ticket.facilitiesDescription = aiAnalysis.facilitiesDescription;
       ticket.followUpQuestions = aiAnalysis.followUpQuestions || [];
       ticket.safetyNotes = aiAnalysis.safetyNotes || [];
       
-      console.log(''AI analysis complete'');
+      console.log('AI analysis complete');
     } catch (aiError) {
       const message = aiError?.message || String(aiError);
-      console.error(''Gemini AI error (proceeding with ticket):'', message);
+      console.error('Gemini AI error (proceeding with ticket):', message);
       aiDebug = { message };
       // Continue with ticket creation even if AI fails
     }
