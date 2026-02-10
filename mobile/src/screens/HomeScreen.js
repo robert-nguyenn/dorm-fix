@@ -14,6 +14,7 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { ticketAPI } from "../services/api";
 import { useTheme } from "../theme";
+import { useFocusEffect } from "@react-navigation/native";
 
 const TITLE_FONT = Platform.select({ ios: "Avenir Next", android: "sans-serif-condensed" });
 
@@ -65,6 +66,12 @@ export default function HomeScreen({ navigation }) {
   React.useEffect(() => {
     fetchTickets();
   }, []);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchTickets();
+    }, [])
+  );
 
   const onRefresh = async () => {
     setRefreshing(true);

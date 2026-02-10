@@ -66,13 +66,15 @@ export const createTicket = async (req, res) => {
       ticket.facilitiesDescription = aiAnalysis.facilitiesDescription;
       ticket.followUpQuestions = aiAnalysis.followUpQuestions || [];
       ticket.safetyNotes = aiAnalysis.safetyNotes || [];
-      
-      if (isFallback) {
-        const errorMsg = aiAnalysis._error || 'Unknown error';
-        console.log(`⚠️ Gemini AI fallback used. Error: ${errorMsg}`);
-        aiDebug = { message: errorMsg, fallback: true };
+      if (aiAnalysis._fallback) {
+        const message = aiAnalysis._error || 'Gemini fallback used';
+        console.warn('Gemini AI fallback used:', message);
+        aiDebug = { message, model: aiAnalysis._model };
       } else {
-        console.log('✅ AI analysis complete');
+        if (debugEnabled) {
+          aiDebug = { message: 'ok', model: aiAnalysis._model };
+        }
+        console.log('AI analysis complete');
       }
     } catch (aiError) {
       const message = aiError?.message || String(aiError);
@@ -85,13 +87,9 @@ export const createTicket = async (req, res) => {
 
     const response = {
       success: true,
-      ticket
+      ticket,
+      ...(debugEnabled && aiDebug ? { aiDebug } : {})
     };
-    
-    // Include debug info if available
-    if (aiDebug) {
-      response.aiDebug = aiDebug;
-    }
 
     res.status(201).json(response);
 
