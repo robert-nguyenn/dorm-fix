@@ -21,8 +21,9 @@ export const analyzeTicketWithGemini = async ({ imageUrl, building, room, userNo
       throw new Error('GEMINI_API_KEY is not set');
     }
 
-    // Use gemini-pro for v1 API compatibility (gemini-1.5-flash requires v1beta)
-    const modelName = process.env.GEMINI_MODEL || 'gemini-pro';
+    // Use gemini-pro-vision for v1 API with image analysis
+    // gemini-1.5-flash requires v1beta API, gemini-pro doesn't support images
+    const modelName = process.env.GEMINI_MODEL || 'gemini-pro-vision';
     console.log(`Using Gemini model: ${modelName}`);
     const model = genAI.getGenerativeModel({ model: modelName });
 
@@ -87,7 +88,10 @@ Respond ONLY with valid JSON, no additional text.`;
     return analysis;
 
   } catch (error) {
-    console.error('Gemini AI error:', error?.message || error);
+    const errorMsg = error?.message || String(error);
+    console.error('❌ Gemini AI error:', errorMsg);
+    console.error('Full error:', error);
+    
     // Return fallback analysis
     return {
       category: 'Other',
@@ -95,7 +99,9 @@ Respond ONLY with valid JSON, no additional text.`;
       summary: 'Maintenance issue reported. Manual review needed.',
       facilitiesDescription: `Maintenance issue reported in ${building}, Room ${room}. ${userNote || 'No additional details provided.'}`,
       followUpQuestions: ['Can you provide more details about the issue?'],
-      safetyNotes: []
+      safetyNotes: [],
+      _fallback: true,  // Flag to identify fallback responses
+      _error: errorMsg  // Include error for debugging
     };
   }
 };
