@@ -66,8 +66,11 @@ export const createTicket = async (req, res) => {
       if (aiAnalysis._fallback) {
         const message = aiAnalysis._error || 'Gemini fallback used';
         console.warn('Gemini AI fallback used:', message);
-        aiDebug = { message };
+        aiDebug = { message, model: aiAnalysis._model };
       } else {
+        if (debugEnabled) {
+          aiDebug = { message: 'ok', model: aiAnalysis._model };
+        }
         console.log('AI analysis complete');
       }
     } catch (aiError) {

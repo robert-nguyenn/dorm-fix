@@ -16,12 +16,12 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
  * @returns {Promise<Object>} - Structured ticket analysis
  */
 export const analyzeTicketWithGemini = async ({ imageUrl, building, room, userNote }) => {
+  const modelName = process.env.GEMINI_MODEL || 'gemini-1.5-flash-latest';
   try {
     if (!process.env.GEMINI_API_KEY) {
       throw new Error('GEMINI_API_KEY is not set');
     }
 
-    const modelName = process.env.GEMINI_MODEL || 'gemini-1.5-flash-latest';
     const model = genAI.getGenerativeModel({ model: modelName });
 
     const prompt = `You are an expert facilities maintenance ticket analyzer. Analyze this maintenance issue photo and provide a structured assessment.
@@ -82,7 +82,10 @@ Respond ONLY with valid JSON, no additional text.`;
       throw new Error('Incomplete analysis from Gemini');
     }
 
-    return analysis;
+    return {
+      ...analysis,
+      _model: modelName
+    };
 
   } catch (error) {
     console.error('Gemini AI error:', error?.message || error);
@@ -95,7 +98,8 @@ Respond ONLY with valid JSON, no additional text.`;
       followUpQuestions: ['Can you provide more details about the issue?'],
       safetyNotes: [],
       _fallback: true,
-      _error: error?.message || String(error)
+      _error: error?.message || String(error),
+      _model: modelName
     };
   }
 };
