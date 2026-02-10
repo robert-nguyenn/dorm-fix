@@ -16,7 +16,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
  * @returns {Promise<Object>} - Structured ticket analysis
  */
 export const analyzeTicketWithGemini = async ({ imageUrl, building, room, userNote }) => {
-  const modelName = process.env.GEMINI_MODEL || 'gemini-1.5-flash-latest';
+  const modelName = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
   try {
     if (!process.env.GEMINI_API_KEY) {
       throw new Error('GEMINI_API_KEY is not set');
